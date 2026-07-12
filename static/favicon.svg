@@ -14,18 +14,10 @@
   <!-- Squircle Background -->
   <rect width="512" height="512" rx="128" fill="url(#brand-grad)" />
 
-  <!-- Minimalist Toolbox Icon -->
-  <g filter="url(#shadow)">
-    <!-- Briefcase Body -->
-    <rect x="128" y="192" width="256" height="192" rx="24" fill="none" stroke="#ffffff" stroke-width="32" />
-    
-    <!-- Briefcase Handle -->
-    <path d="M192 192V144C192 126.33 206.33 112 224 112H288C305.67 112 320 126.33 320 144V192" fill="none" stroke="#ffffff" stroke-width="32" stroke-linecap="round" stroke-linejoin="round" />
-    
-    <!-- Briefcase Division line -->
-    <line x1="128" y1="288" x2="384" y2="288" stroke="#ffffff" stroke-width="24" stroke-linecap="round" />
-    
-    <!-- Center Lock/Badge -->
-    <rect x="232" y="264" width="48" height="48" rx="8" fill="#ffffff" />
+  <!-- Unified Lucide briefcase Icon (Scaled to 512x512) -->
+  <!-- Original Lucide viewBox is 24x24, scaled by 13.333 (size 320x320), centered at (96, 96) -->
+  <g filter="url(#shadow)" transform="translate(96, 96) scale(13.333)">
+    <path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    <rect width="20" height="14" x="2" y="6" rx="2" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
   </g>
 </svg>
