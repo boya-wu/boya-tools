@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YT Climber - YouTube 影片爬取與搜尋工具</title>
+    <meta name="description" content="YT Climber 是一個高效的 YouTube 頻道與影片搜尋、篩選及 MP3 下載工具，支持字體與字幕偵測、多執行緒加速。">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+    <header class="app-header">
+        <div class="container">
+            <h1 id="app-title" class="brand-title"><i data-lucide="briefcase"></i> Boya 的工具箱</h1>
+            <p class="brand-subtitle">高效的 YouTube 工具與文件轉換系統</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Navigation Tabs Grouped by Category -->
+        <div class="tabs-category-container">
+            <div class="tab-group-category">
+                <span class="category-title"><i data-lucide="youtube"></i> YouTube 工具</span>
+                <div class="tab-buttons">
+                    <button id="tab-youtube" class="tab-button active"><i data-lucide="search"></i> 影片搜尋與下載</button>
+                    <button id="tab-batch" class="tab-button"><i data-lucide="bot"></i> 智慧批次自動搜尋</button>
+                </div>
+            </div>
+            <div class="tab-group-category">
+                <span class="category-title"><i data-lucide="file-text"></i> 文件工具</span>
+                <div class="tab-buttons">
+                    <button id="tab-word2md" class="tab-button"><i data-lucide="file-edit"></i> Word 轉 Markdown</button>
+                    <button id="tab-pdf" class="tab-button"><i data-lucide="book-open"></i> PDF 書籍搜尋與下載</button>
+                    <button id="tab-extract-audio" class="tab-button"><i data-lucide="music"></i> MP4 音訊萃取</button>
+                    <button id="tab-compress-video" class="tab-button"><i data-lucide="video"></i> MP4 視訊壓縮</button>
+                    <button id="tab-compress-image" class="tab-button"><i data-lucide="image"></i> 圖片批次壓縮</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- YouTube Section Wrapper -->
+        <div id="youtube-section-container">
+            <!-- Search and Options Control Panel -->
+            <section class="control-panel card">
+                <div class="search-form">
+                    <div class="form-group select-group">
+                        <label for="search-type">搜尋類型</label>
+                        <select id="search-type" class="form-control">
+                            <option value="global">YouTube 全域搜尋</option>
+                            <option value="channel">頻道內關鍵字搜尋 / 頻道影片</option>
+                            <option value="playlist">播放清單內容搜尋</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group url-group" id="url-input-group" style="display: none;">
+                        <label for="target-url" id="url-label">頻道 / 播放清單網址</label>
+                        <input type="text" id="target-url" class="form-control" placeholder="輸入頻道網址、用戶名或播放清單網址">
+                    </div>
+
+                    <div class="form-group query-group">
+                        <label for="search-query">關鍵字</label>
+                        <input type="text" id="search-query" class="form-control" placeholder="請輸入搜尋關鍵字...">
+                    </div>
+
+                    <div class="form-group limit-group">
+                        <label for="results-limit">數量限制</label>
+                        <input type="number" id="results-limit" class="form-control" value="100" min="1" max="1000"
+                            placeholder="例如: 100">
+                    </div>
+
+                    <div class="form-group cookies-group">
+                        <label for="cookies-browser">Cookie 來源瀏覽器</label>
+                        <select id="cookies-browser" class="form-control">
+                            <option value="none">不使用 Cookie</option>
+                            <option value="cookies.txt">專案目錄下的 cookies.txt 檔案</option>
+                            <option value="chrome">Chrome</option>
+                            <option value="safari">Safari</option>
+                            <option value="firefox">Firefox</option>
+                            <option value="edge">Edge</option>
+                            <option value="brave">Brave</option>
+                            <option value="opera">Opera</option>
+                            <option value="vivaldi">Vivaldi</option>
+                        </select>
+                    </div>
+
+                    <div class="form-actions">
+                        <button id="btn-search" class="btn btn-primary">開始搜尋</button>
+                        <button id="btn-playlists" class="btn btn-secondary" style="display: none;">獲取頻道播放清單</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Main Body Grid: Left Sidebar (Filters, Playlists), Right Main (Results) -->
+            <div class="content-grid">
+                <aside class="sidebar-section">
+                    <!-- Filters Card -->
+                    <div class="card filter-card">
+                        <h2 class="section-title"><i data-lucide="sliders"></i> 條件篩選</h2>
+
+                        <div class="filter-group">
+                            <label>影片時長 (分鐘)</label>
+                            <div class="range-inputs">
+                                <input type="number" id="filter-duration-min" placeholder="最小" min="0"
+                                    class="form-control">
+                                <span>至</span>
+                                <input type="number" id="filter-duration-max" placeholder="最大" min="0"
+                                    class="form-control">
+                            </div>
+                        </div>
+
+                        <div class="filter-group">
+                            <label>點閱數量 (萬次)</label>
+                            <div class="range-inputs">
+                                <input type="number" id="filter-views-min" placeholder="最小" min="0"
+                                    class="form-control">
+                                <span>至</span>
+                                <input type="number" id="filter-views-max" placeholder="最大" min="0"
+                                    class="form-control">
+                            </div>
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="filter-date-select">上傳日期</label>
+                            <select id="filter-date-select" class="form-control">
+                                <option value="all">全部時間</option>
+                                <option value="1-week">最近 1 週 (推薦)</option>
+                                <option value="1-month">最近 1 個月</option>
+                                <option value="3-months">最近 3 個月</option>
+                                <option value="6-months">最近 6 個月</option>
+                                <option value="1-year">最近 1 年</option>
+                                <option value="2-years">最近 2 年</option>
+                                <option value="custom">自訂時間範圍</option>
+                            </select>
+                            <div class="range-inputs" id="custom-date-range-container" style="display: none; margin-top: 0.5rem;">
+                                <input type="date" id="filter-date-from" class="form-control" title="最早上傳日期">
+                                <span>至</span>
+                                <input type="date" id="filter-date-to" class="form-control" title="最晚上傳日期">
+                            </div>
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="filter-live">影片類型</label>
+                            <select id="filter-live" class="form-control">
+                                <option value="all">全部影片 (包含直播)</option>
+                                <option value="video">僅一般影片 (排除直播)</option>
+                                <option value="live">僅直播影片 / 直播存檔</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="sort-by">排序方式</label>
+                            <select id="sort-by" class="form-control">
+                                <option value="none">預設排序</option>
+                                <option value="views-desc">點閱數高 → 低</option>
+                                <option value="views-asc">點閱數低 → 高</option>
+                                <option value="duration-desc">片長長 → 短</option>
+                                <option value="duration-asc">片長短 → 長</option>
+                                <option value="date-desc">上傳日期新 → 舊</option>
+                                <option value="date-asc">上傳日期舊 → 新</option>
+                            </select>
+                        </div>
+
+                        <button id="btn-apply-filters" class="btn btn-block btn-secondary">套用篩選與排序</button>
+                    </div>
+
+                    <!-- Playlists Card -->
+                    <div class="card playlists-card" id="playlists-container" style="display: none;">
+                        <h2 class="section-title"><i data-lucide="list-music"></i> 頻道播放清單</h2>
+                        <ul class="playlist-list" id="playlist-list-ul">
+                            <!-- Playlists list dynamically injected -->
+                        </ul>
+                    </div>
+                </aside>
+
+                <!-- Results Section -->
+                <section class="results-section">
+                    <div class="results-header card">
+                        <div class="results-stat">
+                            找到 <span id="stat-total">0</span> 部影片 (篩選後顯示 <span id="stat-filtered">0</span> 部)
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <button id="btn-detect-subs" class="btn btn-secondary btn-sm" disabled>批次字幕偵測
+                                (多執行緒)</button>
+                            <button id="btn-batch-download" class="btn btn-primary btn-sm" disabled>批次下載無字幕 MP3</button>
+                            <button id="btn-select-sub-urls" class="btn btn-secondary btn-sm" disabled><i data-lucide="check-square"></i> 勾選有字幕影片</button>
+                            <button id="btn-select-all-urls" class="btn btn-secondary btn-sm" disabled><i data-lucide="check-square"></i> 勾選所有影片</button>
+                            <button id="btn-copy-selected-urls" class="btn btn-secondary btn-sm" disabled><i data-lucide="copy"></i> 複製勾選影片網址</button>
+                        </div>
+                    </div>
+
+                    <!-- Batch download progress bar -->
+                    <div id="batch-progress-container" class="card"
+                        style="display: none; border-color: var(--brand-secondary); background-color: rgba(37, 99, 235, 0.02); padding: 1rem;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; font-weight: 500; font-size: 0.9rem;">
+                            <span id="batch-progress-text">正在準備批次下載...</span>
+                            <span id="batch-progress-count">0 / 0</span>
+                        </div>
+                        <div
+                            style="width: 100%; height: 8px; background-color: #e2e8f0; border-radius: 4px; margin-top: 0.5rem; overflow: hidden;">
+                            <div id="batch-progress-bar"
+                                style="width: 0%; height: 100%; background-color: var(--brand-secondary); transition: var(--transition-smooth);">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="loading-spinner" id="loading-spinner" style="display: none;">
+                        <div class="spinner"></div>
+                        <p>正在爬取 YouTube 資料，請稍候...</p>
+                    </div>
+
+                    <div class="video-list" id="video-list-container">
+                        <!-- Video cards dynamically injected -->
+                        <div class="no-results">
+                            <p>請在上方輸入搜尋條件，並點擊「開始搜尋」</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- PDF Section Wrapper -->
+        <div id="pdf-section-container" style="display: none;">
+            <section class="control-panel card">
+                <div class="search-form">
+                    <div class="form-group query-group" style="flex: 2;">
+                        <label for="pdf-search-query">書籍關鍵字</label>
+                        <input type="text" id="pdf-search-query" class="form-control" placeholder="請輸入書籍名稱或關鍵字...">
+                    </div>
+                    <div class="form-actions">
+                        <button id="btn-pdf-search" class="btn btn-primary">搜尋 PDF 書籍</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="results-section" style="margin-top: 1.5rem;">
+                <div class="results-header card">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <input type="checkbox" id="pdf-toggle-all"
+                            style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--brand-secondary);"
+                            checked>
+                        <label for="pdf-toggle-all"
+                            style="font-size: 0.9rem; font-weight: 600; cursor: pointer; user-select: none;">全選 /
+                            取消全選</label>
+                    </div>
+                    <div class="results-stat">
+                        找到 <span id="pdf-stat-total">0</span> 本書籍
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button id="btn-pdf-batch-download" class="btn btn-primary btn-sm" disabled>批次下載所選 PDF</button>
+                    </div>
+                </div>
+
+                <!-- Batch download progress bar for PDF -->
+                <div id="pdf-batch-progress-container" class="card"
+                    style="display: none; border-color: var(--brand-secondary); background-color: rgba(37, 99, 235, 0.02); padding: 1rem;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; font-weight: 500; font-size: 0.9rem;">
+                        <span id="pdf-batch-progress-text">正在準備批次下載...</span>
+                        <span id="pdf-batch-progress-count">0 / 0</span>
+                    </div>
+                    <div
+                        style="width: 100%; height: 8px; background-color: #e2e8f0; border-radius: 4px; margin-top: 0.5rem; overflow: hidden;">
+                        <div id="pdf-batch-progress-bar"
+                            style="width: 0%; height: 100%; background-color: var(--brand-secondary); transition: var(--transition-smooth);">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="loading-spinner" id="pdf-loading-spinner" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>正在爬取網路上的 PDF 書籍檔案，請稍候...</p>
+                </div>
+
+                <div class="video-list" id="pdf-list-container">
+                    <div class="no-results">
+                        <p>請在上方輸入搜尋條件，並點擊「搜尋 PDF 書籍」</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Word to Markdown Section Wrapper -->
+        <div id="word2md-section-container" style="display: none;">
+            <div class="word2md-grid">
+                <!-- Configuration panel -->
+                <aside class="word2md-config card">
+                    <h2 class="section-title"><i data-lucide="settings"></i> Word 轉 Markdown 設定</h2>
+                    <div class="form-group" style="margin-bottom: 1.25rem;">
+                        <label for="word2md-folder-path">本機資料夾路徑</label>
+                        <input type="text" id="word2md-folder-path" class="form-control" placeholder="例如: C:\Users\User\Documents\Docs">
+                        <small style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.25rem;">
+                            請輸入包含 Word 檔 (.docx) 的本機資料夾絕對路徑。系統將會遞迴處理至最底層。
+                        </small>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 1.25rem;">
+                        <label>轉換設定</label>
+                        <div class="checkbox-option">
+                            <input type="checkbox" id="word2md-opt-backup" checked disabled>
+                            <label for="word2md-opt-backup">自動產生複製後的資料夾 <code>_converted</code></label>
+                        </div>
+                        <div class="checkbox-option" style="margin-top: 0.5rem;">
+                            <input type="checkbox" id="word2md-opt-replace" checked disabled>
+                            <label for="word2md-opt-replace">取代原 Word 檔案（原檔不保留，其餘保留）</label>
+                        </div>
+                    </div>
+
+                    <div class="form-actions" style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                        <button id="btn-word2md-start" class="btn btn-primary btn-block"><i data-lucide="play"></i> 開始資料夾轉換</button>
+                        <button id="btn-word2md-stop" class="btn btn-danger btn-block" disabled><i data-lucide="square"></i> 停止轉換</button>
+                    </div>
+                </aside>
+
+                <!-- Monitoring Dashboard -->
+                <section class="word2md-monitor">
+                    <div class="results-header card">
+                        <div class="results-stat">
+                            任務進度：<span id="word2md-stat-progress">未開始</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div id="word2md-overall-progress"
+                                style="width: 150px; height: 8px; background-color: #e2e8f0; border-radius: 4px; overflow: hidden; position: relative;">
+                                <div id="word2md-overall-progress-bar"
+                                    style="width: 0%; height: 100%; background-color: var(--brand-secondary); transition: var(--transition-smooth);">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Statistics Card -->
+                    <div class="word2md-stats-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; margin-top: 1rem; margin-bottom: 1rem;">
+                        <div class="card" style="padding: 1rem; text-align: center;">
+                            <div style="font-size: 0.85rem; color: var(--text-secondary);">偵測總數</div>
+                            <div id="word2md-stat-total" style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">0</div>
+                        </div>
+                        <div class="card" style="padding: 1rem; text-align: center;">
+                            <div style="font-size: 0.85rem; color: var(--text-secondary);">轉換 Word 數</div>
+                            <div id="word2md-stat-converted" style="font-size: 1.5rem; font-weight: 700; color: var(--status-success);">0</div>
+                        </div>
+                        <div class="card" style="padding: 1rem; text-align: center;">
+                            <div style="font-size: 0.85rem; color: var(--text-secondary);">複製其餘檔案</div>
+                            <div id="word2md-stat-copied" style="font-size: 1.5rem; font-weight: 700; color: var(--status-info);">0</div>
+                        </div>
+                        <div class="card" style="padding: 1rem; text-align: center;">
+                            <div style="font-size: 0.85rem; color: var(--text-secondary);">失敗數</div>
+                            <div id="word2md-stat-failed" style="font-size: 1.5rem; font-weight: 700; color: var(--brand-primary);">0</div>
+                        </div>
+                    </div>
+
+                    <!-- Log console -->
+                    <div class="card batch-console">
+                        <h3 class="section-title"
+                            style="font-size: 0.95rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+                            <span><i data-lucide="terminal"></i> 執行日誌</span>
+                            <button id="btn-word2md-clear-console" class="btn btn-secondary btn-sm"
+                                style="padding: 2px 8px; font-size: 0.75rem;">清除日誌</button>
+                        </h3>
+                        <div class="console-output" id="word2md-console-output" style="height: 250px;">
+                            [系統] 等待任務啟動...
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- MP4 Audio Extraction Section Wrapper -->
+        <div id="extract-audio-section-container" style="display: none;">
+            <div class="word2md-grid">
+                <!-- Configuration panel -->
+                <aside class="word2md-config card">
+                    <h2 class="section-title"><i data-lucide="settings"></i> MP4 音訊萃取設定</h2>
+                    
+                    <div class="form-group" style="margin-bottom: 1.25rem;">
+                        <label for="extract-target-format">導出目標格式</label>
+                        <select id="extract-target-format" class="form-control">
+                            <option value="auto">自動 (保留原生 MP3/WAV/M4A，其餘轉 MP3)</option>
+                            <option value="mp3">強制轉為 MP3</option>
+                            <option value="wav">強制轉為 WAV</option>
+                        </select>
+                        <small style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.25rem;">
+                            預設自動格式：若音軌原生即為 AI 支援的格式 (MP3/WAV/M4A) 則零轉檔無損導出，其餘轉檔為 MP3。
+                        </small>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 1.25rem;">
+                        <label for="extract-max-size">限制導出大小 (控制導出音訊)</label>
+                        <select id="extract-max-size" class="form-control">
+                            <option value="none">無限制 (維持最優音質)</option>
+                            <option value="25">控制在 25MB 以內 (適合 OpenAI Whisper 等 API 限制)</option>
+                            <option value="10">控制在 10MB 以內</option>
+                            <option value="5">控制在 5MB 以內</option>
+                            <option value="custom">自訂限制大小 (MB)</option>
+                        </select>
+                        <div id="custom-size-input-container" style="display: none; margin-top: 0.5rem;">
+                            <input type="number" id="extract-custom-size" class="form-control" placeholder="輸入限制大小 (例如: 15)" min="1">
+                        </div>
+                        <small style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.25rem;">
+                            開啟後，若萃取出的原生音訊超出限制，系統將自動計算最優 Bitrate 進行壓縮轉檔。
+                        </small>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 1.25rem;">
+                        <label>GPU 硬體加速狀態</label>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem;">
+                            <span class="gpu-status-dot" id="gpu-status-dot-audio" style="width: 10px; height: 10px; border-radius: 50%; background-color: var(--text-muted); display: inline-block;"></span>
+                            <span id="gpu-status-text-audio" style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">偵測中...</span>
+                        </div>
+                    </div>
+
+                    <div class="form-actions" style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                        <button id="btn-extract-start" class="btn btn-primary btn-block" disabled><i data-lucide="play"></i> 開始萃取音訊</button>
+                    </div>
+                </aside>
+
+                <!-- Upload and Status Monitor -->
+                <section class="word2md-monitor">
+                    <div class="card drag-drop-card" id="drop-zone" style="border: 2px dashed #cbd5e1; padding: 3rem; text-align: center; cursor: pointer; transition: all 0.3s ease; border-radius: var(--border-radius); background: rgba(255, 255, 255, 0.4); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 250px;">
+                        <div class="drag-drop-content">
+                            <div class="upload-icon" style="margin-bottom: 1rem;"><i data-lucide="upload-cloud" style="width: 48px; height: 48px; stroke-width: 1.5; color: var(--text-muted);"></i></div>
+                            <h3 style="font-size: 1.25rem; margin-bottom: 0.5rem; color: var(--text-primary);">拖曳 MP4 影片至此處</h3>
+                            <p style="margin-bottom: 0.5rem; color: var(--text-muted);">或</p>
+                            <button id="btn-select-file" class="btn btn-secondary">選擇 MP4 檔案</button>
+                            <input type="file" id="file-input" accept="video/mp4,audio/mp4" style="display: none;">
+                            <p class="file-limits" style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-muted);">
+                                支援所有的 MP4 檔案，導入視訊檔案無大小限制
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Selected file info -->
+                    <div class="card file-info-card" id="selected-file-info" style="display: none; margin-top: 1rem; padding: 1rem;">
+                        <h3 class="section-title" style="font-size: 0.95rem; margin-bottom: 0.5rem;"><i data-lucide="file-check"></i> 已選擇的檔案</h3>
+                        <div class="file-details" style="display: flex; justify-content: space-between; align-items: center;">
+                            <span class="file-name" id="selected-file-name" style="font-weight: 500; color: var(--text-primary);">檔案名稱.mp4</span>
+                            <span class="file-size" id="selected-file-size" style="color: var(--text-muted);">0.00 MB</span>
+                        </div>
+                    </div>
+
+                    <!-- Progress console -->
+                    <div class="card extract-progress-card" id="extract-progress-container" style="display: none; margin-top: 1rem; border-color: var(--brand-secondary); background-color: rgba(37, 99, 235, 0.02); padding: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 500; font-size: 0.9rem;">
+                            <span id="extract-progress-text">正在上傳並萃取音訊...</span>
+                        </div>
+                        <div style="width: 100%; height: 8px; background-color: #e2e8f0; border-radius: 4px; margin-top: 0.5rem; overflow: hidden; position: relative;">
+                            <div id="extract-progress-bar" style="width: 0%; height: 100%; background-color: var(--brand-secondary); transition: var(--transition-smooth);"></div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- MP4 Video Compression Section Wrapper -->
+        <div id="compress-video-section-container" style="display: none;">
+            <div class="word2md-grid">
+                <!-- Configuration panel -->
+                <aside class="word2md-config card">
+                    <h2 class="section-title"><i data-lucide="settings"></i> MP4 視訊壓縮設定</h2>
+                    
+                    <div class="form-group" style="margin-bottom: 1.25rem;">
+                        <label for="compress-mode">壓縮最佳化模式</label>
+                        <select id="compress-mode" class="form-control">
+                            <option value="ai_optimal">最適合 AI 處理設定 (720p/480p 寬度，15-24fps 影格率，相容性最優)</option>
+                            <option value="standard">標準平衡壓縮 (1080p，30fps，維持一般觀看畫質)</option>
+                        </select>
+                        <small style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.25rem;">
+                            最適合 AI 處理設定：自動依據大小限制調降影格率 (15fps) 與解析度 (480p/720p)，確保在極低容量下依然保留 AI 辨識的核心畫面品質。
+                        </small>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 1.25rem;">
+                        <label>導出大小限制</label>
+                        <div class="form-control" style="background-color: rgba(16, 185, 129, 0.05); border-color: var(--status-success); color: var(--status-success); font-weight: 600; display: flex; align-items: center; justify-content: space-between;">
+                            <span><i data-lucide="lock"></i> 強制限制 200MB 以內</span>
+                            <span style="font-size: 0.8rem; background-color: var(--status-success); color: white; padding: 2px 6px; border-radius: 4px;">安全限制: 190MB</span>
+                        </div>
+                        <small style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.25rem;">
+                            視訊壓縮將保證導出檔案嚴格低於 200MB。對導入影片大小無限制。
+                        </small>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 1.25rem;">
+                        <label>GPU 硬體加速狀態</label>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem;">
+                            <span class="gpu-status-dot" id="gpu-status-dot-video" style="width: 10px; height: 10px; border-radius: 50%; background-color: var(--text-muted); display: inline-block;"></span>
+                            <span id="gpu-status-text-video" style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">偵測中...</span>
+                        </div>
+                    </div>
+
+                    <div class="form-actions" style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                        <button id="btn-compress-start" class="btn btn-primary btn-block" disabled><i data-lucide="play"></i> 開始壓縮視訊</button>
+                    </div>
+                </aside>
+
+                <!-- Upload and Status Monitor -->
+                <section class="word2md-monitor">
+                    <div class="card drag-drop-card" id="drop-zone-video" style="border: 2px dashed #cbd5e1; padding: 3rem; text-align: center; cursor: pointer; transition: all 0.3s ease; border-radius: var(--border-radius); background: rgba(255, 255, 255, 0.4); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 250px;">
+                        <div class="drag-drop-content">
+                            <div class="upload-icon" style="margin-bottom: 1rem;"><i data-lucide="upload-cloud" style="width: 48px; height: 48px; stroke-width: 1.5; color: var(--text-muted);"></i></div>
+                            <h3 style="font-size: 1.25rem; margin-bottom: 0.5rem; color: var(--text-primary);">拖曳 MP4 影片至此處</h3>
+                            <p style="margin-bottom: 0.5rem; color: var(--text-muted);">或</p>
+                            <button id="btn-select-file-video" class="btn btn-secondary">選擇 MP4 檔案</button>
+                            <input type="file" id="file-input-video" accept="video/mp4,video/x-matroska,video/quicktime" style="display: none;">
+                            <p class="file-limits" style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-muted);">
+                                支援所有的 MP4 / MKV / MOV 影片，導入視訊檔案無大小限制
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Selected file info -->
+                    <div class="card file-info-card" id="selected-file-info-video" style="display: none; margin-top: 1rem; padding: 1rem;">
+                        <h3 class="section-title" style="font-size: 0.95rem; margin-bottom: 0.5rem;"><i data-lucide="file-check"></i> 已選擇的影片</h3>
+                        <div class="file-details" style="display: flex; justify-content: space-between; align-items: center;">
+                            <span class="file-name" id="selected-file-name-video" style="font-weight: 500; color: var(--text-primary);">檔案名稱.mp4</span>
+                            <span class="file-size" id="selected-file-size-video" style="color: var(--text-muted);">0.00 MB</span>
+                        </div>
+                    </div>
+
+                    <!-- Progress console -->
+                    <div class="card extract-progress-card" id="compress-progress-container" style="display: none; margin-top: 1rem; border-color: var(--brand-secondary); background-color: rgba(37, 99, 235, 0.02); padding: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 500; font-size: 0.9rem;">
+                            <span id="compress-progress-text">正在上傳並壓縮影片...</span>
+                        </div>
+                        <div style="width: 100%; height: 8px; background-color: #e2e8f0; border-radius: 4px; margin-top: 0.5rem; overflow: hidden; position: relative;">
+                            <div id="compress-progress-bar" style="width: 0%; height: 100%; background-color: var(--brand-secondary); transition: var(--transition-smooth);"></div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- Image Compression Section Wrapper -->
+        <div id="compress-image-section-container" style="display: none;">
+            <div class="word2md-grid">
+                <!-- Configuration panel -->
+                <aside class="word2md-config card">
+                    <h2 class="section-title"><i data-lucide="settings"></i> 圖片批次壓縮設定</h2>
+                    
+                    <div class="form-group" style="margin-bottom: 1.25rem;">
+                        <label for="compress-image-folder-path">本機資料夾路徑</label>
+                        <input type="text" id="compress-image-folder-path" class="form-control" placeholder="例如: C:\Users\User\Pictures">
+                        <small style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.25rem;">
+                            請輸入包含圖片檔案的本機資料夾絕對路徑。系統將會遞迴處理至最底層。
+                        </small>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 1.25rem;">
+                        <label for="compress-image-max-edge">限制長邊最大像素 (長寬比不變)</label>
+                        <select id="compress-image-max-edge" class="form-control">
+                            <option value="1568">1568px (最適合 Claude 3.5 / Gemini 視覺模型)</option>
+                            <option value="1024">1024px (平衡效能與細節)</option>
+                            <option value="768">768px (極限壓縮，適合一般 OCR)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 1.25rem;">
+                        <label for="compress-image-quality">壓縮品質 (Quality)</label>
+                        <select id="compress-image-quality" class="form-control">
+                            <option value="85">85 (推薦：兼顧清晰度與小體積)</option>
+                            <option value="90">90 (高品質：適合精細文字)</option>
+                            <option value="75">75 (高壓縮比：適合大型圖檔)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 1.25rem;">
+                        <label>進階設定</label>
+                        <div class="checkbox-option">
+                            <input type="checkbox" id="compress-image-convert-png" checked>
+                            <label for="compress-image-convert-png">強制將 PNG / BMP / TIFF 轉為 JPEG (大幅減小體積)</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 1.25rem;">
+                        <label><i data-lucide="alert-triangle" style="width: 14px; height: 14px; margin-right: 4px; vertical-align: middle;"></i> 安全警告</label>
+                        <div class="form-control" style="background-color: rgba(225, 29, 72, 0.05); border-color: var(--brand-primary); color: var(--brand-primary); font-size: 0.85rem; font-weight: 500;">
+                            此操作將<strong>直接取代/覆寫</strong>原檔案！建議在執行前先備份您的資料夾。
+                        </div>
+                    </div>
+
+                    <div class="form-actions" style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                        <button id="btn-compress-image-start" class="btn btn-primary btn-block"><i data-lucide="play"></i> 開始圖片壓縮</button>
+                        <button id="btn-compress-image-stop" class="btn btn-danger btn-block" disabled><i data-lucide="square"></i> 停止壓縮</button>
+                    </div>
+                </aside>
+
+                <!-- Monitoring Dashboard -->
+                <section class="word2md-monitor">
+                    <div class="results-header card">
+                        <div class="results-stat">
+                            任務進度：<span id="compress-image-stat-progress">未開始</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div id="compress-image-overall-progress"
+                                style="width: 150px; height: 8px; background-color: #e2e8f0; border-radius: 4px; overflow: hidden; position: relative;">
+                                <div id="compress-image-overall-progress-bar"
+                                    style="width: 0%; height: 100%; background-color: var(--brand-secondary); transition: var(--transition-smooth);">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Statistics Card -->
+                    <div class="word2md-stats-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; margin-top: 1rem; margin-bottom: 1rem;">
+                        <div class="card" style="padding: 1rem; text-align: center;">
+                            <div style="font-size: 0.85rem; color: var(--text-secondary);">偵測圖片數</div>
+                            <div id="compress-image-stat-total" style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">0</div>
+                        </div>
+                        <div class="card" style="padding: 1rem; text-align: center;">
+                            <div style="font-size: 0.85rem; color: var(--text-secondary);">成功壓縮數</div>
+                            <div id="compress-image-stat-converted" style="font-size: 1.5rem; font-weight: 700; color: var(--status-success);">0</div>
+                        </div>
+                        <div class="card" style="padding: 1rem; text-align: center;">
+                            <div style="font-size: 0.85rem; color: var(--text-secondary);">已節省容量</div>
+                            <div id="compress-image-stat-saved" style="font-size: 1.5rem; font-weight: 700; color: var(--status-info);">0.00 MB</div>
+                        </div>
+                        <div class="card" style="padding: 1rem; text-align: center;">
+                            <div style="font-size: 0.85rem; color: var(--text-secondary);">失敗數</div>
+                            <div id="compress-image-stat-failed" style="font-size: 1.5rem; font-weight: 700; color: var(--brand-primary);">0</div>
+                        </div>
+                    </div>
+
+                    <!-- Log console -->
+                    <div class="card batch-console">
+                        <h3 class="section-title"
+                            style="font-size: 0.95rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+                            <span><i data-lucide="terminal"></i> 執行日誌</span>
+                            <button id="btn-compress-image-clear-console" class="btn btn-secondary btn-sm"
+                                style="padding: 2px 8px; font-size: 0.75rem;">清除日誌</button>
+                        </h3>
+                        <div class="console-output" id="compress-image-console-output" style="height: 250px;">
+                            [系統] 等待任務啟動...
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- Batch Section Wrapper -->
+        <div id="batch-section-container" style="display: none;">
+            <div class="batch-grid">
+                <!-- Configuration panel -->
+                <aside class="batch-config card">
+                    <h2 class="section-title"><i data-lucide="settings"></i> 批次與自動化設定</h2>
+                    <div class="form-group">
+                        <label for="batch-keywords">搜尋關鍵字 (每行一個)</label>
+                        <textarea id="batch-keywords" class="form-control" rows="8"
+                            placeholder="請輸入搜尋關鍵字，以換行區隔...&#10;例如：&#10;Python 教學&#10;機器學習入門"></textarea>
+                    </div>
+
+                    <div class="filter-group" style="margin-top: 1rem;">
+                        <label>自動化執行項目</label>
+                        <div class="checkbox-option">
+                            <input type="checkbox" id="batch-opt-save-urls" checked>
+                            <label for="batch-opt-save-urls">儲存有字幕影片網址成 <code>yt-url.txt</code></label>
+                        </div>
+                        <div class="checkbox-option">
+                            <input type="checkbox" id="batch-opt-download-mp3" checked>
+                            <label for="batch-opt-download-mp3">自動下載無字幕影片音訊（原生格式，零轉檔）</label>
+                        </div>
+                        <div class="checkbox-option">
+                            <input type="checkbox" id="batch-opt-download-pdf" checked>
+                            <label for="batch-opt-download-pdf">自動搜尋並下載首本 <code>PDF</code> 書籍</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group limit-group" style="margin-top: 1rem;">
+                        <label for="batch-results-limit">YouTube 搜尋影片數量限制</label>
+                        <input type="number" id="batch-results-limit" class="form-control" value="20" min="1" max="100"
+                            placeholder="例如: 20">
+                    </div>
+
+                    <div class="form-group limit-group" style="margin-top: 1rem;">
+                        <label for="batch-concurrency">並行關鍵字數（流量控制）</label>
+                        <input type="number" id="batch-concurrency" class="form-control" value="2" min="1" max="5"
+                            placeholder="建議 2–3，避免 YouTube 限流">
+                        <small style="color: var(--text-muted); font-size: 0.8rem;">同時處理多個關鍵字可加速，但過高可能觸發 YouTube 429 限流</small>
+                    </div>
+
+                    <div class="form-group cookies-group" style="margin-top: 1rem;">
+                        <label for="batch-cookies-browser">Cookie 來源瀏覽器</label>
+                        <select id="batch-cookies-browser" class="form-control">
+                            <option value="none">不使用 Cookie</option>
+                            <option value="cookies.txt">專案目錄下的 cookies.txt 檔案</option>
+                            <option value="chrome">Chrome</option>
+                            <option value="safari">Safari</option>
+                            <option value="firefox">Firefox</option>
+                            <option value="edge">Edge</option>
+                            <option value="brave">Brave</option>
+                            <option value="opera">Opera</option>
+                            <option value="vivaldi">Vivaldi</option>
+                        </select>
+                    </div>
+
+                    <div class="form-actions"
+                        style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                        <button id="btn-batch-start" class="btn btn-primary btn-block"><i data-lucide="play"></i> 開始批次搜尋與自動化</button>
+                        <button id="btn-batch-stop" class="btn btn-danger btn-block" disabled><i data-lucide="square"></i> 停止執行</button>
+                    </div>
+                </aside>
+
+                <!-- Monitoring Dashboard -->
+                <section class="batch-monitor">
+                    <div class="results-header card">
+                        <div class="results-stat">
+                            任務進度：<span id="batch-stat-progress">未開始</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div id="batch-overall-progress"
+                                style="width: 150px; height: 8px; background-color: #e2e8f0; border-radius: 4px; overflow: hidden; position: relative;">
+                                <div id="batch-overall-progress-bar"
+                                    style="width: 0%; height: 100%; background-color: var(--brand-secondary); transition: var(--transition-smooth);">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="batch-task-list" id="batch-task-list-container">
+                        <!-- Individual keyword tasks will be rendered here -->
+                        <div class="no-results">
+                            <p>請在左側輸入關鍵字與設定，然後點選「開始批次搜尋與自動化」</p>
+                        </div>
+                    </div>
+
+                    <!-- Log console -->
+                    <div class="card batch-console">
+                        <h3 class="section-title"
+                            style="font-size: 0.95rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+                            <span><i data-lucide="terminal"></i> 執行日誌</span>
+                            <button id="btn-clear-console" class="btn btn-secondary btn-sm"
+                                style="padding: 2px 8px; font-size: 0.75rem;">清除日誌</button>
+                        </h3>
+                        <div class="console-output" id="batch-console-output">
+                            [系統] 等待任務啟動...
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <footer class="app-footer">
+        <p>© 2026 Boya 的工具箱. All rights reserved.</p>
+    </footer>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">複製成功！</div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
