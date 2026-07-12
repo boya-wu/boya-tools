@@ -10,6 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
@@ -18,7 +19,6 @@
     <header class="app-header">
         <div class="container">
             <h1 id="app-title" class="brand-title"><i data-lucide="briefcase"></i> Boya 的工具箱</h1>
-            <p class="brand-subtitle">高效的 YouTube 工具與文件轉換系統</p>
         </div>
     </header>
 
@@ -137,7 +137,8 @@
                                 <option value="2-years">最近 2 年</option>
                                 <option value="custom">自訂時間範圍</option>
                             </select>
-                            <div class="range-inputs" id="custom-date-range-container" style="display: none; margin-top: 0.5rem;">
+                            <div class="range-inputs" id="custom-date-range-container"
+                                style="display: none; margin-top: 0.5rem;">
                                 <input type="date" id="filter-date-from" class="form-control" title="最早上傳日期">
                                 <span>至</span>
                                 <input type="date" id="filter-date-to" class="form-control" title="最晚上傳日期">
@@ -188,9 +189,12 @@
                             <button id="btn-detect-subs" class="btn btn-secondary btn-sm" disabled>批次字幕偵測
                                 (多執行緒)</button>
                             <button id="btn-batch-download" class="btn btn-primary btn-sm" disabled>批次下載無字幕 MP3</button>
-                            <button id="btn-select-sub-urls" class="btn btn-secondary btn-sm" disabled><i data-lucide="check-square"></i> 勾選有字幕影片</button>
-                            <button id="btn-select-all-urls" class="btn btn-secondary btn-sm" disabled><i data-lucide="check-square"></i> 勾選所有影片</button>
-                            <button id="btn-copy-selected-urls" class="btn btn-secondary btn-sm" disabled><i data-lucide="copy"></i> 複製勾選影片網址</button>
+                            <button id="btn-select-sub-urls" class="btn btn-secondary btn-sm" disabled><i
+                                    data-lucide="check-square"></i> 勾選有字幕影片</button>
+                            <button id="btn-select-all-urls" class="btn btn-secondary btn-sm" disabled><i
+                                    data-lucide="check-square"></i> 勾選所有影片</button>
+                            <button id="btn-copy-selected-urls" class="btn btn-secondary btn-sm" disabled><i
+                                    data-lucide="copy"></i> 複製勾選影片網址</button>
                         </div>
                     </div>
 
@@ -294,7 +298,8 @@
                     <h2 class="section-title"><i data-lucide="settings"></i> Word 轉 Markdown 設定</h2>
                     <div class="form-group" style="margin-bottom: 1.25rem;">
                         <label for="word2md-folder-path">本機資料夾路徑</label>
-                        <input type="text" id="word2md-folder-path" class="form-control" placeholder="例如: C:\Users\User\Documents\Docs">
+                        <input type="text" id="word2md-folder-path" class="form-control"
+                            placeholder="例如: C:\Users\User\Documents\Docs">
                         <small style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.25rem;">
                             請輸入包含 Word 檔 (.docx) 的本機資料夾絕對路徑。系統將會遞迴處理至最底層。
                         </small>
@@ -312,9 +317,12 @@
                         </div>
                     </div>
 
-                    <div class="form-actions" style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
-                        <button id="btn-word2md-start" class="btn btn-primary btn-block"><i data-lucide="play"></i> 開始資料夾轉換</button>
-                        <button id="btn-word2md-stop" class="btn btn-danger btn-block" disabled><i data-lucide="square"></i> 停止轉換</button>
+                    <div class="form-actions"
+                        style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                        <button id="btn-word2md-start" class="btn btn-primary btn-block"><i data-lucide="play"></i>
+                            開始資料夾轉換</button>
+                        <button id="btn-word2md-stop" class="btn btn-danger btn-block" disabled><i
+                                data-lucide="square"></i> 停止轉換</button>
                     </div>
                 </aside>
 
@@ -335,22 +343,27 @@
                     </div>
 
                     <!-- Statistics Card -->
-                    <div class="word2md-stats-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; margin-top: 1rem; margin-bottom: 1rem;">
+                    <div class="word2md-stats-row"
+                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; margin-top: 1rem; margin-bottom: 1rem;">
                         <div class="card" style="padding: 1rem; text-align: center;">
                             <div style="font-size: 0.85rem; color: var(--text-secondary);">偵測總數</div>
-                            <div id="word2md-stat-total" style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">0</div>
+                            <div id="word2md-stat-total"
+                                style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">0</div>
                         </div>
                         <div class="card" style="padding: 1rem; text-align: center;">
                             <div style="font-size: 0.85rem; color: var(--text-secondary);">轉換 Word 數</div>
-                            <div id="word2md-stat-converted" style="font-size: 1.5rem; font-weight: 700; color: var(--status-success);">0</div>
+                            <div id="word2md-stat-converted"
+                                style="font-size: 1.5rem; font-weight: 700; color: var(--status-success);">0</div>
                         </div>
                         <div class="card" style="padding: 1rem; text-align: center;">
                             <div style="font-size: 0.85rem; color: var(--text-secondary);">複製其餘檔案</div>
-                            <div id="word2md-stat-copied" style="font-size: 1.5rem; font-weight: 700; color: var(--status-info);">0</div>
+                            <div id="word2md-stat-copied"
+                                style="font-size: 1.5rem; font-weight: 700; color: var(--status-info);">0</div>
                         </div>
                         <div class="card" style="padding: 1rem; text-align: center;">
                             <div style="font-size: 0.85rem; color: var(--text-secondary);">失敗數</div>
-                            <div id="word2md-stat-failed" style="font-size: 1.5rem; font-weight: 700; color: var(--brand-primary);">0</div>
+                            <div id="word2md-stat-failed"
+                                style="font-size: 1.5rem; font-weight: 700; color: var(--brand-primary);">0</div>
                         </div>
                     </div>
 
@@ -376,7 +389,7 @@
                 <!-- Configuration panel -->
                 <aside class="word2md-config card">
                     <h2 class="section-title"><i data-lucide="settings"></i> MP4 音訊萃取設定</h2>
-                    
+
                     <div class="form-group" style="margin-bottom: 1.25rem;">
                         <label for="extract-target-format">導出目標格式</label>
                         <select id="extract-target-format" class="form-control">
@@ -399,7 +412,8 @@
                             <option value="custom">自訂限制大小 (MB)</option>
                         </select>
                         <div id="custom-size-input-container" style="display: none; margin-top: 0.5rem;">
-                            <input type="number" id="extract-custom-size" class="form-control" placeholder="輸入限制大小 (例如: 15)" min="1">
+                            <input type="number" id="extract-custom-size" class="form-control"
+                                placeholder="輸入限制大小 (例如: 15)" min="1">
                         </div>
                         <small style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.25rem;">
                             開啟後，若萃取出的原生音訊超出限制，系統將自動計算最優 Bitrate 進行壓縮轉檔。
@@ -409,47 +423,66 @@
                     <div class="form-group" style="margin-bottom: 1.25rem;">
                         <label>GPU 硬體加速狀態</label>
                         <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem;">
-                            <span class="gpu-status-dot" id="gpu-status-dot-audio" style="width: 10px; height: 10px; border-radius: 50%; background-color: var(--text-muted); display: inline-block;"></span>
-                            <span id="gpu-status-text-audio" style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">偵測中...</span>
+                            <span class="gpu-status-dot" id="gpu-status-dot-audio"
+                                style="width: 10px; height: 10px; border-radius: 50%; background-color: var(--text-muted); display: inline-block;"></span>
+                            <span id="gpu-status-text-audio"
+                                style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">偵測中...</span>
                         </div>
                     </div>
 
-                    <div class="form-actions" style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
-                        <button id="btn-extract-start" class="btn btn-primary btn-block" disabled><i data-lucide="play"></i> 開始萃取音訊</button>
+                    <div class="form-actions"
+                        style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                        <button id="btn-extract-start" class="btn btn-primary btn-block" disabled><i
+                                data-lucide="play"></i> 開始萃取音訊</button>
                     </div>
                 </aside>
 
                 <!-- Upload and Status Monitor -->
                 <section class="word2md-monitor">
-                    <div class="card drag-drop-card" id="drop-zone" style="border: 2px dashed #cbd5e1; padding: 3rem; text-align: center; cursor: pointer; transition: all 0.3s ease; border-radius: var(--border-radius); background: rgba(255, 255, 255, 0.4); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 250px;">
+                    <div class="card drag-drop-card" id="drop-zone"
+                        style="border: 2px dashed #cbd5e1; padding: 3rem; text-align: center; cursor: pointer; transition: all 0.3s ease; border-radius: var(--border-radius); background: rgba(255, 255, 255, 0.4); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 250px;">
                         <div class="drag-drop-content">
-                            <div class="upload-icon" style="margin-bottom: 1rem;"><i data-lucide="upload-cloud" style="width: 48px; height: 48px; stroke-width: 1.5; color: var(--text-muted);"></i></div>
-                            <h3 style="font-size: 1.25rem; margin-bottom: 0.5rem; color: var(--text-primary);">拖曳 MP4 影片至此處</h3>
+                            <div class="upload-icon" style="margin-bottom: 1rem;"><i data-lucide="upload-cloud"
+                                    style="width: 48px; height: 48px; stroke-width: 1.5; color: var(--text-muted);"></i>
+                            </div>
+                            <h3 style="font-size: 1.25rem; margin-bottom: 0.5rem; color: var(--text-primary);">拖曳 MP4
+                                影片至此處</h3>
                             <p style="margin-bottom: 0.5rem; color: var(--text-muted);">或</p>
                             <button id="btn-select-file" class="btn btn-secondary">選擇 MP4 檔案</button>
                             <input type="file" id="file-input" accept="video/mp4,audio/mp4" style="display: none;">
-                            <p class="file-limits" style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-muted);">
+                            <p class="file-limits"
+                                style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-muted);">
                                 支援所有的 MP4 檔案，導入視訊檔案無大小限制
                             </p>
                         </div>
                     </div>
 
                     <!-- Selected file info -->
-                    <div class="card file-info-card" id="selected-file-info" style="display: none; margin-top: 1rem; padding: 1rem;">
-                        <h3 class="section-title" style="font-size: 0.95rem; margin-bottom: 0.5rem;"><i data-lucide="file-check"></i> 已選擇的檔案</h3>
-                        <div class="file-details" style="display: flex; justify-content: space-between; align-items: center;">
-                            <span class="file-name" id="selected-file-name" style="font-weight: 500; color: var(--text-primary);">檔案名稱.mp4</span>
-                            <span class="file-size" id="selected-file-size" style="color: var(--text-muted);">0.00 MB</span>
+                    <div class="card file-info-card" id="selected-file-info"
+                        style="display: none; margin-top: 1rem; padding: 1rem;">
+                        <h3 class="section-title" style="font-size: 0.95rem; margin-bottom: 0.5rem;"><i
+                                data-lucide="file-check"></i> 已選擇的檔案</h3>
+                        <div class="file-details"
+                            style="display: flex; justify-content: space-between; align-items: center;">
+                            <span class="file-name" id="selected-file-name"
+                                style="font-weight: 500; color: var(--text-primary);">檔案名稱.mp4</span>
+                            <span class="file-size" id="selected-file-size" style="color: var(--text-muted);">0.00
+                                MB</span>
                         </div>
                     </div>
 
                     <!-- Progress console -->
-                    <div class="card extract-progress-card" id="extract-progress-container" style="display: none; margin-top: 1rem; border-color: var(--brand-secondary); background-color: rgba(37, 99, 235, 0.02); padding: 1rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 500; font-size: 0.9rem;">
+                    <div class="card extract-progress-card" id="extract-progress-container"
+                        style="display: none; margin-top: 1rem; border-color: var(--brand-secondary); background-color: rgba(37, 99, 235, 0.02); padding: 1rem;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; font-weight: 500; font-size: 0.9rem;">
                             <span id="extract-progress-text">正在上傳並萃取音訊...</span>
                         </div>
-                        <div style="width: 100%; height: 8px; background-color: #e2e8f0; border-radius: 4px; margin-top: 0.5rem; overflow: hidden; position: relative;">
-                            <div id="extract-progress-bar" style="width: 0%; height: 100%; background-color: var(--brand-secondary); transition: var(--transition-smooth);"></div>
+                        <div
+                            style="width: 100%; height: 8px; background-color: #e2e8f0; border-radius: 4px; margin-top: 0.5rem; overflow: hidden; position: relative;">
+                            <div id="extract-progress-bar"
+                                style="width: 0%; height: 100%; background-color: var(--brand-secondary); transition: var(--transition-smooth);">
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -462,7 +495,7 @@
                 <!-- Configuration panel -->
                 <aside class="word2md-config card">
                     <h2 class="section-title"><i data-lucide="settings"></i> MP4 視訊壓縮設定</h2>
-                    
+
                     <div class="form-group" style="margin-bottom: 1.25rem;">
                         <label for="compress-mode">壓縮最佳化模式</label>
                         <select id="compress-mode" class="form-control">
@@ -476,9 +509,12 @@
 
                     <div class="form-group" style="margin-bottom: 1.25rem;">
                         <label>導出大小限制</label>
-                        <div class="form-control" style="background-color: rgba(16, 185, 129, 0.05); border-color: var(--status-success); color: var(--status-success); font-weight: 600; display: flex; align-items: center; justify-content: space-between;">
+                        <div class="form-control"
+                            style="background-color: rgba(16, 185, 129, 0.05); border-color: var(--status-success); color: var(--status-success); font-weight: 600; display: flex; align-items: center; justify-content: space-between;">
                             <span><i data-lucide="lock"></i> 強制限制 200MB 以內</span>
-                            <span style="font-size: 0.8rem; background-color: var(--status-success); color: white; padding: 2px 6px; border-radius: 4px;">安全限制: 190MB</span>
+                            <span
+                                style="font-size: 0.8rem; background-color: var(--status-success); color: white; padding: 2px 6px; border-radius: 4px;">安全限制:
+                                190MB</span>
                         </div>
                         <small style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.25rem;">
                             視訊壓縮將保證導出檔案嚴格低於 200MB。對導入影片大小無限制。
@@ -488,47 +524,67 @@
                     <div class="form-group" style="margin-bottom: 1.25rem;">
                         <label>GPU 硬體加速狀態</label>
                         <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem;">
-                            <span class="gpu-status-dot" id="gpu-status-dot-video" style="width: 10px; height: 10px; border-radius: 50%; background-color: var(--text-muted); display: inline-block;"></span>
-                            <span id="gpu-status-text-video" style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">偵測中...</span>
+                            <span class="gpu-status-dot" id="gpu-status-dot-video"
+                                style="width: 10px; height: 10px; border-radius: 50%; background-color: var(--text-muted); display: inline-block;"></span>
+                            <span id="gpu-status-text-video"
+                                style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">偵測中...</span>
                         </div>
                     </div>
 
-                    <div class="form-actions" style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
-                        <button id="btn-compress-start" class="btn btn-primary btn-block" disabled><i data-lucide="play"></i> 開始壓縮視訊</button>
+                    <div class="form-actions"
+                        style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                        <button id="btn-compress-start" class="btn btn-primary btn-block" disabled><i
+                                data-lucide="play"></i> 開始壓縮視訊</button>
                     </div>
                 </aside>
 
                 <!-- Upload and Status Monitor -->
                 <section class="word2md-monitor">
-                    <div class="card drag-drop-card" id="drop-zone-video" style="border: 2px dashed #cbd5e1; padding: 3rem; text-align: center; cursor: pointer; transition: all 0.3s ease; border-radius: var(--border-radius); background: rgba(255, 255, 255, 0.4); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 250px;">
+                    <div class="card drag-drop-card" id="drop-zone-video"
+                        style="border: 2px dashed #cbd5e1; padding: 3rem; text-align: center; cursor: pointer; transition: all 0.3s ease; border-radius: var(--border-radius); background: rgba(255, 255, 255, 0.4); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 250px;">
                         <div class="drag-drop-content">
-                            <div class="upload-icon" style="margin-bottom: 1rem;"><i data-lucide="upload-cloud" style="width: 48px; height: 48px; stroke-width: 1.5; color: var(--text-muted);"></i></div>
-                            <h3 style="font-size: 1.25rem; margin-bottom: 0.5rem; color: var(--text-primary);">拖曳 MP4 影片至此處</h3>
+                            <div class="upload-icon" style="margin-bottom: 1rem;"><i data-lucide="upload-cloud"
+                                    style="width: 48px; height: 48px; stroke-width: 1.5; color: var(--text-muted);"></i>
+                            </div>
+                            <h3 style="font-size: 1.25rem; margin-bottom: 0.5rem; color: var(--text-primary);">拖曳 MP4
+                                影片至此處</h3>
                             <p style="margin-bottom: 0.5rem; color: var(--text-muted);">或</p>
                             <button id="btn-select-file-video" class="btn btn-secondary">選擇 MP4 檔案</button>
-                            <input type="file" id="file-input-video" accept="video/mp4,video/x-matroska,video/quicktime" style="display: none;">
-                            <p class="file-limits" style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-muted);">
+                            <input type="file" id="file-input-video" accept="video/mp4,video/x-matroska,video/quicktime"
+                                style="display: none;">
+                            <p class="file-limits"
+                                style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-muted);">
                                 支援所有的 MP4 / MKV / MOV 影片，導入視訊檔案無大小限制
                             </p>
                         </div>
                     </div>
 
                     <!-- Selected file info -->
-                    <div class="card file-info-card" id="selected-file-info-video" style="display: none; margin-top: 1rem; padding: 1rem;">
-                        <h3 class="section-title" style="font-size: 0.95rem; margin-bottom: 0.5rem;"><i data-lucide="file-check"></i> 已選擇的影片</h3>
-                        <div class="file-details" style="display: flex; justify-content: space-between; align-items: center;">
-                            <span class="file-name" id="selected-file-name-video" style="font-weight: 500; color: var(--text-primary);">檔案名稱.mp4</span>
-                            <span class="file-size" id="selected-file-size-video" style="color: var(--text-muted);">0.00 MB</span>
+                    <div class="card file-info-card" id="selected-file-info-video"
+                        style="display: none; margin-top: 1rem; padding: 1rem;">
+                        <h3 class="section-title" style="font-size: 0.95rem; margin-bottom: 0.5rem;"><i
+                                data-lucide="file-check"></i> 已選擇的影片</h3>
+                        <div class="file-details"
+                            style="display: flex; justify-content: space-between; align-items: center;">
+                            <span class="file-name" id="selected-file-name-video"
+                                style="font-weight: 500; color: var(--text-primary);">檔案名稱.mp4</span>
+                            <span class="file-size" id="selected-file-size-video" style="color: var(--text-muted);">0.00
+                                MB</span>
                         </div>
                     </div>
 
                     <!-- Progress console -->
-                    <div class="card extract-progress-card" id="compress-progress-container" style="display: none; margin-top: 1rem; border-color: var(--brand-secondary); background-color: rgba(37, 99, 235, 0.02); padding: 1rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 500; font-size: 0.9rem;">
+                    <div class="card extract-progress-card" id="compress-progress-container"
+                        style="display: none; margin-top: 1rem; border-color: var(--brand-secondary); background-color: rgba(37, 99, 235, 0.02); padding: 1rem;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; font-weight: 500; font-size: 0.9rem;">
                             <span id="compress-progress-text">正在上傳並壓縮影片...</span>
                         </div>
-                        <div style="width: 100%; height: 8px; background-color: #e2e8f0; border-radius: 4px; margin-top: 0.5rem; overflow: hidden; position: relative;">
-                            <div id="compress-progress-bar" style="width: 0%; height: 100%; background-color: var(--brand-secondary); transition: var(--transition-smooth);"></div>
+                        <div
+                            style="width: 100%; height: 8px; background-color: #e2e8f0; border-radius: 4px; margin-top: 0.5rem; overflow: hidden; position: relative;">
+                            <div id="compress-progress-bar"
+                                style="width: 0%; height: 100%; background-color: var(--brand-secondary); transition: var(--transition-smooth);">
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -541,10 +597,11 @@
                 <!-- Configuration panel -->
                 <aside class="word2md-config card">
                     <h2 class="section-title"><i data-lucide="settings"></i> 圖片批次壓縮設定</h2>
-                    
+
                     <div class="form-group" style="margin-bottom: 1.25rem;">
                         <label for="compress-image-folder-path">本機資料夾路徑</label>
-                        <input type="text" id="compress-image-folder-path" class="form-control" placeholder="例如: C:\Users\User\Pictures">
+                        <input type="text" id="compress-image-folder-path" class="form-control"
+                            placeholder="例如: C:\Users\User\Pictures">
                         <small style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.25rem;">
                             請輸入包含圖片檔案的本機資料夾絕對路徑。系統將會遞迴處理至最底層。
                         </small>
@@ -577,15 +634,21 @@
                     </div>
 
                     <div class="form-group" style="margin-bottom: 1.25rem;">
-                        <label><i data-lucide="alert-triangle" style="width: 14px; height: 14px; margin-right: 4px; vertical-align: middle;"></i> 安全警告</label>
-                        <div class="form-control" style="background-color: rgba(225, 29, 72, 0.05); border-color: var(--brand-primary); color: var(--brand-primary); font-size: 0.85rem; font-weight: 500;">
+                        <label><i data-lucide="alert-triangle"
+                                style="width: 14px; height: 14px; margin-right: 4px; vertical-align: middle;"></i>
+                            安全警告</label>
+                        <div class="form-control"
+                            style="background-color: rgba(225, 29, 72, 0.05); border-color: var(--brand-primary); color: var(--brand-primary); font-size: 0.85rem; font-weight: 500;">
                             此操作將<strong>直接取代/覆寫</strong>原檔案！建議在執行前先備份您的資料夾。
                         </div>
                     </div>
 
-                    <div class="form-actions" style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
-                        <button id="btn-compress-image-start" class="btn btn-primary btn-block"><i data-lucide="play"></i> 開始圖片壓縮</button>
-                        <button id="btn-compress-image-stop" class="btn btn-danger btn-block" disabled><i data-lucide="square"></i> 停止壓縮</button>
+                    <div class="form-actions"
+                        style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                        <button id="btn-compress-image-start" class="btn btn-primary btn-block"><i
+                                data-lucide="play"></i> 開始圖片壓縮</button>
+                        <button id="btn-compress-image-stop" class="btn btn-danger btn-block" disabled><i
+                                data-lucide="square"></i> 停止壓縮</button>
                     </div>
                 </aside>
 
@@ -606,22 +669,27 @@
                     </div>
 
                     <!-- Statistics Card -->
-                    <div class="word2md-stats-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; margin-top: 1rem; margin-bottom: 1rem;">
+                    <div class="word2md-stats-row"
+                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; margin-top: 1rem; margin-bottom: 1rem;">
                         <div class="card" style="padding: 1rem; text-align: center;">
                             <div style="font-size: 0.85rem; color: var(--text-secondary);">偵測圖片數</div>
-                            <div id="compress-image-stat-total" style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">0</div>
+                            <div id="compress-image-stat-total"
+                                style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">0</div>
                         </div>
                         <div class="card" style="padding: 1rem; text-align: center;">
                             <div style="font-size: 0.85rem; color: var(--text-secondary);">成功壓縮數</div>
-                            <div id="compress-image-stat-converted" style="font-size: 1.5rem; font-weight: 700; color: var(--status-success);">0</div>
+                            <div id="compress-image-stat-converted"
+                                style="font-size: 1.5rem; font-weight: 700; color: var(--status-success);">0</div>
                         </div>
                         <div class="card" style="padding: 1rem; text-align: center;">
                             <div style="font-size: 0.85rem; color: var(--text-secondary);">已節省容量</div>
-                            <div id="compress-image-stat-saved" style="font-size: 1.5rem; font-weight: 700; color: var(--status-info);">0.00 MB</div>
+                            <div id="compress-image-stat-saved"
+                                style="font-size: 1.5rem; font-weight: 700; color: var(--status-info);">0.00 MB</div>
                         </div>
                         <div class="card" style="padding: 1rem; text-align: center;">
                             <div style="font-size: 0.85rem; color: var(--text-secondary);">失敗數</div>
-                            <div id="compress-image-stat-failed" style="font-size: 1.5rem; font-weight: 700; color: var(--brand-primary);">0</div>
+                            <div id="compress-image-stat-failed"
+                                style="font-size: 1.5rem; font-weight: 700; color: var(--brand-primary);">0</div>
                         </div>
                     </div>
 
@@ -679,7 +747,8 @@
                         <label for="batch-concurrency">並行關鍵字數（流量控制）</label>
                         <input type="number" id="batch-concurrency" class="form-control" value="2" min="1" max="5"
                             placeholder="建議 2–3，避免 YouTube 限流">
-                        <small style="color: var(--text-muted); font-size: 0.8rem;">同時處理多個關鍵字可加速，但過高可能觸發 YouTube 429 限流</small>
+                        <small style="color: var(--text-muted); font-size: 0.8rem;">同時處理多個關鍵字可加速，但過高可能觸發 YouTube 429
+                            限流</small>
                     </div>
 
                     <div class="form-group cookies-group" style="margin-top: 1rem;">
@@ -699,8 +768,10 @@
 
                     <div class="form-actions"
                         style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
-                        <button id="btn-batch-start" class="btn btn-primary btn-block"><i data-lucide="play"></i> 開始批次搜尋與自動化</button>
-                        <button id="btn-batch-stop" class="btn btn-danger btn-block" disabled><i data-lucide="square"></i> 停止執行</button>
+                        <button id="btn-batch-start" class="btn btn-primary btn-block"><i data-lucide="play"></i>
+                            開始批次搜尋與自動化</button>
+                        <button id="btn-batch-stop" class="btn btn-danger btn-block" disabled><i
+                                data-lucide="square"></i> 停止執行</button>
                     </div>
                 </aside>
 
