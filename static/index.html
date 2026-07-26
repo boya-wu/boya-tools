@@ -37,9 +37,11 @@
                 <div class="tab-buttons">
                     <button id="tab-word2md" class="tab-button"><i data-lucide="file-edit"></i> Word 轉 Markdown</button>
                     <button id="tab-pdf" class="tab-button"><i data-lucide="book-open"></i> PDF 書籍搜尋與下載</button>
+                    <button id="tab-transcode-ai-audio" class="tab-button"><i data-lucide="mic"></i> AI 逐字稿音訊轉檔</button>
                     <button id="tab-extract-audio" class="tab-button"><i data-lucide="music"></i> MP4 音訊萃取</button>
                     <button id="tab-compress-video" class="tab-button"><i data-lucide="video"></i> MP4 視訊壓縮</button>
                     <button id="tab-compress-image" class="tab-button"><i data-lucide="image"></i> 圖片批次壓縮</button>
+
                 </div>
             </div>
         </div>
@@ -383,8 +385,166 @@
             </div>
         </div>
 
+        <!-- AI Transcription Audio Transcoding Section Wrapper -->
+        <div id="transcode-ai-audio-section-container" style="display: none;">
+            <div class="word2md-grid">
+                <!-- Configuration panel -->
+                <aside class="word2md-config card">
+                    <h2 class="section-title"><i data-lucide="mic"></i> AI 逐字稿音訊轉檔設定</h2>
+
+                    <div class="form-group" style="margin-bottom: 1.25rem;">
+                        <label for="ai-audio-preset">最佳化預設模式 (Preset)</label>
+                        <select id="ai-audio-preset" class="form-control">
+                            <option value="whisper">🤖 OpenAI Whisper API 最優化 (&lt;25MB, 16kHz 單聲道 MP3)</option>
+                            <option value="lightweight">⚡ 超輕量語音模式 (64kbps MP3, 體積極小清晰)</option>
+                            <option value="wav_mono">🎙️ 無損 16kHz 單聲道 WAV (標準 ASR A.I. 辨識)</option>
+                            <option value="custom">⚙️ 自訂高階格式與參數</option>
+                        </select>
+                        <small style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.25rem;">
+                            預設針對 AI 語音辨識優化人聲頻率 (16kHz Mono)，可減少 80%+ 檔案大小，提高 API 上傳速度。
+                        </small>
+                    </div>
+
+                    <!-- Custom parameters box (only active/visible when custom selected) -->
+                    <div id="ai-audio-custom-container" style="display: none; background: rgba(0,0,0,0.02); padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(0,0,0,0.05); margin-bottom: 1.25rem;">
+                        <div class="form-group" style="margin-bottom: 0.75rem;">
+                            <label for="ai-audio-target-format">導出格式</label>
+                            <select id="ai-audio-target-format" class="form-control">
+                                <option value="mp3">MP3</option>
+                                <option value="m4a">M4A (AAC)</option>
+                                <option value="wav">WAV (PCM)</option>
+                                <option value="ogg">OGG (Vorbis)</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0.75rem;">
+                            <label for="ai-audio-sample-rate">取樣率 (Sample Rate)</label>
+                            <select id="ai-audio-sample-rate" class="form-control">
+                                <option value="16000">16000 Hz (語音辨識標準)</option>
+                                <option value="24000">24000 Hz</option>
+                                <option value="44100">44100 Hz (CD 品質)</option>
+                                <option value="keep">保持原檔取樣率</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0.75rem;">
+                            <label for="ai-audio-channels">聲道 (Channels)</label>
+                            <select id="ai-audio-channels" class="form-control">
+                                <option value="1">單聲道 (Mono, 節省一半大小)</option>
+                                <option value="2">雙聲道 (Stereo)</option>
+                                <option value="keep">保持原聲道</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0.75rem;">
+                            <label for="ai-audio-bitrate">音訊位元率 (Bitrate)</label>
+                            <select id="ai-audio-bitrate" class="form-control">
+                                <option value="64">64 kbps (推薦: 語音清晰)</option>
+                                <option value="32">32 kbps (極高壓縮率)</option>
+                                <option value="128">128 kbps (標準音質)</option>
+                                <option value="192">192 kbps (高品質)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="ai-audio-max-size">檔案大小限制</label>
+                            <select id="ai-audio-max-size" class="form-control">
+                                <option value="25">限制 25MB 以內 (Whisper API 上限)</option>
+                                <option value="10">限制 10MB 以內</option>
+                                <option value="5">限制 5MB 以內</option>
+                                <option value="none">不限制</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 1.25rem;">
+                        <label>GPU 硬體加速狀態</label>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem;">
+                            <span class="gpu-status-dot" id="gpu-status-dot-ai-audio"
+                                style="width: 10px; height: 10px; border-radius: 50%; background-color: var(--text-muted); display: inline-block;"></span>
+                            <span id="gpu-status-text-ai-audio"
+                                style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">偵測中...</span>
+                        </div>
+                    </div>
+
+                    <div class="form-actions"
+                        style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                        <button id="btn-ai-audio-start" class="btn btn-primary btn-block" disabled><i
+                                data-lucide="play"></i> 開始轉檔為 AI 逐字稿格式</button>
+                    </div>
+                </aside>
+
+                <!-- Upload and Status Monitor -->
+                <section class="word2md-monitor">
+                    <div class="card drag-drop-card" id="drop-zone-ai-audio"
+                        style="border: 2px dashed #cbd5e1; padding: 3rem; text-align: center; cursor: pointer; transition: all 0.3s ease; border-radius: var(--border-radius); background: rgba(255, 255, 255, 0.4); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 250px;">
+                        <div class="drag-drop-content">
+                            <div class="upload-icon" style="margin-bottom: 1rem;"><i data-lucide="upload-cloud"
+                                    style="width: 48px; height: 48px; stroke-width: 1.5; color: var(--text-muted);"></i>
+                            </div>
+                            <h3 style="font-size: 1.25rem; margin-bottom: 0.5rem; color: var(--text-primary);">拖曳音訊/視訊檔案至此處</h3>
+                            <p style="margin-bottom: 0.5rem; color: var(--text-muted);">或</p>
+                            <button id="btn-select-file-ai-audio" class="btn btn-secondary">選擇音訊/視訊檔案</button>
+                            <input type="file" id="file-input-ai-audio" accept="audio/*,video/*,.mp3,.wav,.m4a,.aac,.flac,.ogg,.webm,.mp4,.mov,.mkv"
+                                style="display: none;">
+                            <p class="file-limits"
+                                style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-muted);">
+                                支援 MP3, WAV, M4A, AAC, FLAC, OGG, MP4, MOV, MKV 等各種格式
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Selected file info -->
+                    <div class="card file-info-card" id="selected-file-info-ai-audio"
+                        style="display: none; margin-top: 1rem; padding: 1rem;">
+                        <h3 class="section-title" style="font-size: 0.95rem; margin-bottom: 0.5rem;"><i
+                                data-lucide="file-check"></i> 已選擇的檔案</h3>
+                        <div class="file-details"
+                            style="display: flex; justify-content: space-between; align-items: center;">
+                            <span class="file-name" id="selected-file-name-ai-audio"
+                                style="font-weight: 500; color: var(--text-primary);">檔案名稱.mp3</span>
+                            <span class="file-size" id="selected-file-size-ai-audio" style="color: var(--text-muted);">0.00
+                                MB</span>
+                        </div>
+                    </div>
+
+                    <!-- Progress console -->
+                    <div class="card extract-progress-card" id="ai-audio-progress-container"
+                        style="display: none; margin-top: 1rem; border-color: var(--brand-secondary); background-color: rgba(37, 99, 235, 0.02); padding: 1rem;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; font-weight: 500; font-size: 0.9rem;">
+                            <span id="ai-audio-progress-text">正在上傳並處理音訊...</span>
+                        </div>
+                        <div
+                            style="width: 100%; height: 8px; background-color: #e2e8f0; border-radius: 4px; margin-top: 0.5rem; overflow: hidden; position: relative;">
+                            <div id="ai-audio-progress-bar"
+                                style="width: 0%; height: 100%; background-color: var(--brand-secondary); transition: var(--transition-smooth);">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Result stats & Download -->
+                    <div class="card" id="ai-audio-result-container" style="display: none; margin-top: 1rem; padding: 1.25rem;">
+                        <h3 class="section-title" style="font-size: 1rem; color: var(--status-success); margin-bottom: 0.75rem;"><i data-lucide="check-circle"></i> 音訊轉檔完成！已最佳化為 AI ASR 格式</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                            <div style="background: rgba(0,0,0,0.03); padding: 0.75rem; border-radius: 6px; text-align: center;">
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">原檔大小</div>
+                                <div id="ai-audio-orig-size" style="font-weight: 600; font-size: 1.1rem; color: var(--text-primary);">0 MB</div>
+                            </div>
+                            <div style="background: rgba(0,0,0,0.03); padding: 0.75rem; border-radius: 6px; text-align: center;">
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">轉檔後大小</div>
+                                <div id="ai-audio-new-size" style="font-weight: 600; font-size: 1.1rem; color: var(--brand-secondary);">0 MB</div>
+                            </div>
+                            <div style="background: rgba(0,0,0,0.03); padding: 0.75rem; border-radius: 6px; text-align: center;">
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">瘦身減幅</div>
+                                <div id="ai-audio-saved-ratio" style="font-weight: 600; font-size: 1.1rem; color: var(--status-success);">0%</div>
+                            </div>
+                        </div>
+                        <a id="btn-download-ai-audio" class="btn btn-primary btn-block" style="text-align: center; text-decoration: none;" download><i data-lucide="download"></i> 下載 AI 辨識最佳化音訊</a>
+                    </div>
+                </section>
+            </div>
+        </div>
+
         <!-- MP4 Audio Extraction Section Wrapper -->
         <div id="extract-audio-section-container" style="display: none;">
+
             <div class="word2md-grid">
                 <!-- Configuration panel -->
                 <aside class="word2md-config card">

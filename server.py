@@ -1933,6 +1933,190 @@ def api_compress_image_folder_stream():
     return Response(stream_with_context(generate()), mimetype='text/event-stream')
 
 
+@app.route('/api/transcode-audio-ai-stream', methods=['GET'])
+def api_transcode_audio_ai_stream():
+    temp_path = request.args.get('temp_path', '').strip()
+    preset = request.args.get('preset', 'whisper').strip()
+    target_format = request.args.get('target_format', 'auto').strip()
+    sample_rate_str = request.args.get('sample_rate', '16000').strip()
+    channels_str = request.args.get('channels', '1').strip()
+    bitrate_str = request.args.get('bitrate', 'auto').strip()
+    max_size_mb_str = request.args.get('max_size_mb', '25').strip()
+    # Audio-only transcoding does not benefit from the GPU detection used by the
+    # video tools. Media Foundation's mp3_mf/aac_mf encoders are software
+    # encoders and can report no timestamp progress until the file is complete.
+    # Keep using FFmpeg's native encoders so long recordings finish quickly and
+    # produce continuous progress updates.
+
+    if not temp_path or not os.path.exists(temp_path):
+        return Response("data: " + json.dumps({'status': 'error', 'message': '檔案不存在'}, ensure_ascii=False) + "\n\n", mimetype='text/event-stream')
+
+    def generate():
+        import subprocess
+        import json
+        import uuid
+
+        probe_cmd = [
+            'ffprobe', '-v', 'error',
+            '-show_format', '-show_streams',
+            '-of', 'json', temp_path
+        ]
+        try:
+            res = subprocess.run(probe_cmd, capture_output=True, text=True, encoding='utf-8', creationflags=0x08000000 if os.name == 'nt' else 0)
+            if res.returncode != 0:
+                yield f"data: {json.dumps({'status': 'error', 'message': '無法讀取媒體檔案資訊'}, ensure_ascii=False)}\n\n"
+                return
+            info = json.loads(res.stdout)
+        except Exception as e:
+            yield f"data: {json.dumps({'status': 'error', 'message': f'ffprobe 分析失敗: {e}'}, ensure_ascii=False)}\n\n"
+            return
+
+        audio_stream = None
+        for stream in info.get('streams', []):
+            if stream.get('codec_type') == 'audio':
+                audio_stream = stream
+                break
+
+        if not audio_stream:
+            yield f"data: {json.dumps({'status': 'error', 'message': '該檔案中未偵測到任何音軌'}, ensure_ascii=False)}\n\n"
+            return
+
+        duration_str = audio_stream.get('duration') or info.get('format', {}).get('duration')
+        if not duration_str:
+            yield f"data: {json.dumps({'status': 'error', 'message': '無法偵測音軌長度'}, ensure_ascii=False)}\n\n"
+            return
+        duration = float(duration_str)
+
+        orig_size = os.path.getsize(temp_path)
+
+        # Presets: 'whisper', 'lightweight', 'wav_mono', 'custom'
+        if preset == 'whisper':
+            final_fmt = 'mp3' if target_format == 'auto' else target_format
+            sample_rate = '16000'
+            channels = '1'
+            max_size_mb = 24.0  # Limit strictly under 25MB Whisper API threshold
+            bitrate_kbps = 64
+        elif preset == 'lightweight':
+            final_fmt = 'mp3' if target_format == 'auto' else target_format
+            sample_rate = '16000'
+            channels = '1'
+            max_size_mb = None
+            bitrate_kbps = 48
+        elif preset == 'wav_mono':
+            final_fmt = 'wav'
+            sample_rate = '16000'
+            channels = '1'
+            max_size_mb = None
+            bitrate_kbps = None
+        else:  # custom
+            final_fmt = 'mp3' if target_format in ('auto', '') else target_format
+            sample_rate = sample_rate_str if sample_rate_str != 'keep' else None
+            channels = channels_str if channels_str != 'keep' else None
+
+            try:
+                max_size_mb = float(max_size_mb_str) if max_size_mb_str != 'none' else None
+            except ValueError:
+                max_size_mb = None
+
+            try:
+                bitrate_kbps = int(bitrate_str) if bitrate_str != 'auto' else 64
+            except ValueError:
+                bitrate_kbps = 64
+
+        # Calculate constrained bitrate if max_size_mb is set
+        if max_size_mb and max_size_mb > 0:
+            target_bytes = max_size_mb * 1024 * 1024
+            allowed_bitrate_bps = (target_bytes * 8) / duration
+            allowed_kbps = int(allowed_bitrate_bps / 1000)
+
+            if final_fmt in ('mp3', 'm4a', 'ogg'):
+                if bitrate_kbps is None or bitrate_kbps > allowed_kbps:
+                    bitrate_kbps = min(320, max(24, allowed_kbps))
+
+        temp_dir = os.path.dirname(temp_path)
+        out_filename = f"ai_asr_{uuid.uuid4().hex}.{final_fmt}"
+        out_path = os.path.join(temp_dir, out_filename)
+
+        cmd = [
+            'ffmpeg', '-y', '-nostdin',
+            '-stats_period', '0.25', '-progress', 'pipe:1',
+            '-i', temp_path, '-vn'
+        ]
+
+        if sample_rate:
+            cmd.extend(['-ar', str(sample_rate)])
+        if channels:
+            cmd.extend(['-ac', str(channels)])
+
+        if final_fmt == 'mp3':
+            cmd.extend(['-c:a', 'libmp3lame'])
+            b_k = bitrate_kbps if bitrate_kbps else 64
+            cmd.extend(['-b:a', f'{b_k}k'])
+        elif final_fmt == 'wav':
+            cmd.extend(['-c:a', 'pcm_s16le'])
+        elif final_fmt == 'm4a':
+            cmd.extend(['-c:a', 'aac'])
+            b_k = bitrate_kbps if bitrate_kbps else 64
+            cmd.extend(['-b:a', f'{b_k}k'])
+        elif final_fmt == 'ogg':
+            cmd.extend(['-c:a', 'libvorbis'])
+            b_k = bitrate_kbps if bitrate_kbps else 64
+            cmd.extend(['-b:a', f'{b_k}k'])
+        else:
+            cmd.extend(['-c:a', 'libmp3lame', '-b:a', '64k'])
+
+        cmd.append(out_path)
+
+        try:
+            process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                text=True,
+                encoding='utf-8',
+                creationflags=0x08000000 if os.name == 'nt' else 0
+            )
+
+            last_percent = 0
+            yield f"data: {json.dumps({'status': 'processing', 'percent': 0}, ensure_ascii=False)}\n\n"
+
+            while True:
+                line = process.stdout.readline()
+                if not line:
+                    break
+                line = line.strip()
+                if line.startswith('out_time_us='):
+                    try:
+                        us = int(line.split('=')[1])
+                        percent = int(us / (duration * 1000000) * 100)
+                        percent = min(99, max(0, percent))
+                        if percent > last_percent:
+                            last_percent = percent
+                            yield f"data: {json.dumps({'status': 'processing', 'percent': percent}, ensure_ascii=False)}\n\n"
+                    except Exception:
+                        pass
+
+            process.wait()
+
+            if process.returncode != 0:
+                yield f"data: {json.dumps({'status': 'error', 'message': 'FFmpeg 語音轉檔失敗'}, ensure_ascii=False)}\n\n"
+            else:
+                try:
+                    if os.path.exists(temp_path):
+                        os.remove(temp_path)
+                except Exception as cleanup_err:
+                    logger.warning(f"清理上傳暫存檔失敗 {temp_path}: {cleanup_err}")
+
+                new_size = os.path.getsize(out_path)
+                saved_ratio = (1 - (new_size / orig_size)) * 100 if orig_size > 0 else 0
+
+                yield f"data: {json.dumps({'status': 'finished', 'percent': 100, 'path': out_path, 'filename': out_filename, 'final_format': final_fmt, 'orig_size': orig_size, 'new_size': new_size, 'saved_ratio': saved_ratio}, ensure_ascii=False)}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'status': 'error', 'message': str(e)}, ensure_ascii=False)}\n\n"
+
+    return Response(stream_with_context(generate()), mimetype='text/event-stream')
+
+
 if __name__ == '__main__':
     # Clean downloads on start
     try:

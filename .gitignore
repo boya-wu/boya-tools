@@ -1,5 +1,13 @@
-# macOS
+# OS generated temporary files
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
 .DS_Store
+.Trashes
+._*
 
 # Python
 __pycache__/
@@ -40,3 +48,30 @@ scratch/
 # Logs
 *.log
 cookies.txt
+
+# AI agent configuration and local projections
+# 這些檔案的正本／設定不隨程式 repo 版控；規則正本在 Obsidian-Vault。
+
+# Shared AI entry files
+AGENTS.md
+AGENT.md
+CLAUDE.md
+GEMINI.md
+AI.md
+WARP.md
+QODO.md
+
+# Agent-specific folders and files
+.agents/
+.aider*
+.claude/
+.claudeignore
+.codex/
+.continue/
+.cursor/
+.cursorignore
+.cursorrules
+.github/copilot-instructions.md
+.junie/
+.roo/
+.windsurf/

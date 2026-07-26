@@ -940,6 +940,7 @@ const tabYoutube = document.getElementById('tab-youtube');
 const tabPdf = document.getElementById('tab-pdf');
 const tabBatch = document.getElementById('tab-batch');
 const tabWord2md = document.getElementById('tab-word2md');
+const tabTranscodeAiAudio = document.getElementById('tab-transcode-ai-audio');
 const tabExtractAudio = document.getElementById('tab-extract-audio');
 const tabCompressVideo = document.getElementById('tab-compress-video');
 const tabCompressImage = document.getElementById('tab-compress-image');
@@ -948,9 +949,11 @@ const youtubeSectionContainer = document.getElementById('youtube-section-contain
 const pdfSectionContainer = document.getElementById('pdf-section-container');
 const batchSectionContainer = document.getElementById('batch-section-container');
 const word2mdSectionContainer = document.getElementById('word2md-section-container');
+const transcodeAiAudioSectionContainer = document.getElementById('transcode-ai-audio-section-container');
 const extractAudioSectionContainer = document.getElementById('extract-audio-section-container');
 const compressVideoSectionContainer = document.getElementById('compress-video-section-container');
 const compressImageSectionContainer = document.getElementById('compress-image-section-container');
+
 
 const pdfSearchQueryInput = document.getElementById('pdf-search-query');
 const btnPdfSearch = document.getElementById('btn-pdf-search');
@@ -1016,6 +1019,7 @@ function setTabActive(tabName) {
     tabPdf.classList.remove('active');
     tabBatch.classList.remove('active');
     tabWord2md.classList.remove('active');
+    if (tabTranscodeAiAudio) tabTranscodeAiAudio.classList.remove('active');
     tabExtractAudio.classList.remove('active');
     tabCompressVideo.classList.remove('active');
     tabCompressImage.classList.remove('active');
@@ -1024,6 +1028,7 @@ function setTabActive(tabName) {
     pdfSectionContainer.style.display = 'none';
     batchSectionContainer.style.display = 'none';
     word2mdSectionContainer.style.display = 'none';
+    if (transcodeAiAudioSectionContainer) transcodeAiAudioSectionContainer.style.display = 'none';
     extractAudioSectionContainer.style.display = 'none';
     compressVideoSectionContainer.style.display = 'none';
     compressImageSectionContainer.style.display = 'none';
@@ -1040,6 +1045,9 @@ function setTabActive(tabName) {
     } else if (tabName === 'word2md') {
         tabWord2md.classList.add('active');
         word2mdSectionContainer.style.display = 'block';
+    } else if (tabName === 'transcode-ai-audio') {
+        if (tabTranscodeAiAudio) tabTranscodeAiAudio.classList.add('active');
+        if (transcodeAiAudioSectionContainer) transcodeAiAudioSectionContainer.style.display = 'block';
     } else if (tabName === 'extract-audio') {
         tabExtractAudio.classList.add('active');
         extractAudioSectionContainer.style.display = 'block';
@@ -1058,9 +1066,11 @@ tabYoutube.addEventListener('click', () => setTabActive('youtube'));
 tabPdf.addEventListener('click', () => setTabActive('pdf'));
 tabBatch.addEventListener('click', () => setTabActive('batch'));
 tabWord2md.addEventListener('click', () => setTabActive('word2md'));
+if (tabTranscodeAiAudio) tabTranscodeAiAudio.addEventListener('click', () => setTabActive('transcode-ai-audio'));
 tabExtractAudio.addEventListener('click', () => setTabActive('extract-audio'));
 tabCompressVideo.addEventListener('click', () => setTabActive('compress-video'));
 tabCompressImage.addEventListener('click', () => setTabActive('compress-image'));
+
 
 // Bind PDF Event Listeners
 btnPdfSearch.addEventListener('click', performPdfSearch);
@@ -1853,7 +1863,10 @@ function loadSavedFiltersAndSearch() {
         setTabActive('batch');
     } else if (activeTab === 'word2md') {
         setTabActive('word2md');
+    } else if (activeTab === 'transcode-ai-audio') {
+        setTabActive('transcode-ai-audio');
     } else if (activeTab === 'extract-audio') {
+
         setTabActive('extract-audio');
     } else if (activeTab === 'compress-video') {
         setTabActive('compress-video');
@@ -2300,6 +2313,8 @@ async function checkGpuStatus() {
         const textAudio = document.getElementById('gpu-status-text-audio');
         const dotVideo = document.getElementById('gpu-status-dot-video');
         const textVideo = document.getElementById('gpu-status-text-video');
+        const dotAiAudio = document.getElementById('gpu-status-dot-ai-audio');
+        const textAiAudio = document.getElementById('gpu-status-text-ai-audio');
         
         const color = isGpuAvailable ? 'var(--status-success)' : 'var(--text-muted)';
         const text = isGpuAvailable ? `已啟用 (${currentGpuEncoder})` : '未啟用 (使用 CPU)';
@@ -2308,6 +2323,9 @@ async function checkGpuStatus() {
         if (textAudio) textAudio.textContent = text;
         if (dotVideo) dotVideo.style.backgroundColor = color;
         if (textVideo) textVideo.textContent = text;
+        if (dotAiAudio) dotAiAudio.style.backgroundColor = color;
+        if (textAiAudio) textAiAudio.textContent = text;
+
     } catch (e) {
         console.error('Failed to check GPU status', e);
     }
@@ -2605,8 +2623,205 @@ btnCompressImageClearConsole.addEventListener('click', () => {
     compressImageConsoleOutput.innerHTML = '[系統] 日誌已清除。\n';
 });
 
+// ==========================================
+// AI Transcription Audio Transcoding Module
+// ==========================================
+
+const aiAudioPresetSelect = document.getElementById('ai-audio-preset');
+const aiAudioCustomContainer = document.getElementById('ai-audio-custom-container');
+const aiAudioTargetFormatSelect = document.getElementById('ai-audio-target-format');
+const aiAudioSampleRateSelect = document.getElementById('ai-audio-sample-rate');
+const aiAudioChannelsSelect = document.getElementById('ai-audio-channels');
+const aiAudioBitrateSelect = document.getElementById('ai-audio-bitrate');
+const aiAudioMaxSizeSelect = document.getElementById('ai-audio-max-size');
+
+const btnAiAudioStart = document.getElementById('btn-ai-audio-start');
+const dropZoneAiAudio = document.getElementById('drop-zone-ai-audio');
+const btnSelectFileAiAudio = document.getElementById('btn-select-file-ai-audio');
+const fileInputAiAudio = document.getElementById('file-input-ai-audio');
+const selectedFileInfoAiAudio = document.getElementById('selected-file-info-ai-audio');
+const selectedFileNameAiAudio = document.getElementById('selected-file-name-ai-audio');
+const selectedFileSizeAiAudio = document.getElementById('selected-file-size-ai-audio');
+
+const aiAudioProgressContainer = document.getElementById('ai-audio-progress-container');
+const aiAudioProgressText = document.getElementById('ai-audio-progress-text');
+const aiAudioProgressBar = document.getElementById('ai-audio-progress-bar');
+
+const aiAudioResultContainer = document.getElementById('ai-audio-result-container');
+const aiAudioOrigSize = document.getElementById('ai-audio-orig-size');
+const aiAudioNewSize = document.getElementById('ai-audio-new-size');
+const aiAudioSavedRatio = document.getElementById('ai-audio-saved-ratio');
+const btnDownloadAiAudio = document.getElementById('btn-download-ai-audio');
+
+let selectedAiAudioFile = null;
+
+if (aiAudioPresetSelect) {
+    aiAudioPresetSelect.addEventListener('change', () => {
+        if (aiAudioPresetSelect.value === 'custom') {
+            aiAudioCustomContainer.style.display = 'block';
+        } else {
+            aiAudioCustomContainer.style.display = 'none';
+        }
+        localStorage.setItem('ai-audio-preset', aiAudioPresetSelect.value);
+    });
+}
+
+// File selection trigger
+if (btnSelectFileAiAudio) {
+    btnSelectFileAiAudio.addEventListener('click', (e) => {
+        e.stopPropagation();
+        fileInputAiAudio.click();
+    });
+}
+
+if (fileInputAiAudio) {
+    fileInputAiAudio.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleAiAudioFileSelection(e.target.files[0]);
+        }
+    });
+}
+
+if (dropZoneAiAudio) {
+    dropZoneAiAudio.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZoneAiAudio.style.borderColor = 'var(--brand-secondary)';
+        dropZoneAiAudio.style.backgroundColor = 'rgba(37, 99, 235, 0.05)';
+    });
+
+    dropZoneAiAudio.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dropZoneAiAudio.style.borderColor = '#cbd5e1';
+        dropZoneAiAudio.style.backgroundColor = 'rgba(255, 255, 255, 0.4)';
+    });
+
+    dropZoneAiAudio.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZoneAiAudio.style.borderColor = '#cbd5e1';
+        dropZoneAiAudio.style.backgroundColor = 'rgba(255, 255, 255, 0.4)';
+
+        if (e.dataTransfer.files.length > 0) {
+            handleAiAudioFileSelection(e.dataTransfer.files[0]);
+        }
+    });
+
+    dropZoneAiAudio.addEventListener('click', () => {
+        fileInputAiAudio.click();
+    });
+}
+
+function handleAiAudioFileSelection(file) {
+    selectedAiAudioFile = file;
+    selectedFileNameAiAudio.textContent = file.name;
+
+    const sizeInMB = file.size / (1024 * 1024);
+    selectedFileSizeAiAudio.textContent = `${sizeInMB.toFixed(2)} MB`;
+
+    selectedFileInfoAiAudio.style.display = 'block';
+    aiAudioResultContainer.style.display = 'none';
+    btnAiAudioStart.disabled = false;
+}
+
+if (btnAiAudioStart) {
+    btnAiAudioStart.addEventListener('click', startAiAudioTranscoding);
+}
+
+async function startAiAudioTranscoding() {
+    if (!selectedAiAudioFile) return;
+
+    btnAiAudioStart.disabled = true;
+    aiAudioProgressContainer.style.display = 'block';
+    aiAudioResultContainer.style.display = 'none';
+    aiAudioProgressBar.style.width = '0%';
+    aiAudioProgressBar.style.backgroundColor = 'var(--brand-secondary)';
+    aiAudioProgressText.textContent = '正在準備上傳音訊/視訊檔案...';
+
+    try {
+        const uploadResult = await uploadFileHelper(selectedAiAudioFile, (percent, loaded, total) => {
+            aiAudioProgressBar.style.width = `${Math.round(percent * 0.4)}%`;
+            aiAudioProgressText.textContent = `正在上傳檔案: ${percent}% (已上傳 ${(loaded / (1024 * 1024)).toFixed(1)}MB / ${(total / (1024 * 1024)).toFixed(1)}MB)`;
+        });
+
+        if (!uploadResult.success) {
+            throw new Error(uploadResult.error || '上傳失敗');
+        }
+
+        aiAudioProgressBar.style.width = '40%';
+        aiAudioProgressText.textContent = '上傳完成，伺服器正在將音訊轉換為 AI 逐字稿最佳化格式...';
+
+        const queryParams = new URLSearchParams({
+            temp_path: uploadResult.temp_path,
+            preset: aiAudioPresetSelect.value,
+            target_format: aiAudioTargetFormatSelect ? aiAudioTargetFormatSelect.value : 'mp3',
+            sample_rate: aiAudioSampleRateSelect ? aiAudioSampleRateSelect.value : '16000',
+            channels: aiAudioChannelsSelect ? aiAudioChannelsSelect.value : '1',
+            bitrate: aiAudioBitrateSelect ? aiAudioBitrateSelect.value : '64',
+            max_size_mb: aiAudioMaxSizeSelect ? aiAudioMaxSizeSelect.value : '25',
+            use_gpu: isGpuAvailable ? 'true' : 'false'
+        }).toString();
+
+        const eventSource = new EventSource(`/api/transcode-audio-ai-stream?${queryParams}`);
+
+        eventSource.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.status === 'processing') {
+                const ffmpegPercent = data.percent || 0;
+                const overallPercent = 40 + Math.round(ffmpegPercent * 0.6);
+                aiAudioProgressBar.style.width = `${overallPercent}%`;
+                aiAudioProgressText.textContent = `正在轉檔與壓縮音訊人聲 (FFmpeg 處理中: ${ffmpegPercent}%)...`;
+            } else if (data.status === 'finished') {
+                eventSource.close();
+                aiAudioProgressBar.style.width = '100%';
+                aiAudioProgressText.textContent = '轉檔成功！已最佳化為 AI 逐字稿辨識規格';
+
+                const originalName = selectedAiAudioFile.name.substring(0, selectedAiAudioFile.name.lastIndexOf('.'));
+                const dlName = `${originalName}_ai_asr.${data.final_format}`;
+                const mimetype = data.final_format === 'm4a' ? 'audio/mp4' : `audio/${data.final_format}`;
+
+                const dlParams = new URLSearchParams({
+                    path: data.path,
+                    download_name: dlName,
+                    mimetype: mimetype
+                }).toString();
+
+                const downloadUrl = `/api/download-processed?${dlParams}`;
+
+                aiAudioOrigSize.textContent = `${(data.orig_size / (1024 * 1024)).toFixed(2)} MB`;
+                aiAudioNewSize.textContent = `${(data.new_size / (1024 * 1024)).toFixed(2)} MB`;
+                aiAudioSavedRatio.textContent = `${data.saved_ratio.toFixed(1)}%`;
+
+                btnDownloadAiAudio.href = downloadUrl;
+                btnDownloadAiAudio.download = dlName;
+
+                aiAudioProgressContainer.style.display = 'none';
+                aiAudioResultContainer.style.display = 'block';
+                btnAiAudioStart.disabled = false;
+
+                alert(`🎉 音訊轉檔完成！已轉換為 ${data.final_format.toUpperCase()} 規格。\n檔案體積減少 ${data.saved_ratio.toFixed(1)}%！`);
+            } else if (data.status === 'error') {
+                eventSource.close();
+                aiAudioProgressText.textContent = `錯誤: ${data.message || '伺服器端音訊轉檔錯誤'}`;
+                aiAudioProgressBar.style.backgroundColor = 'var(--brand-primary)';
+                btnAiAudioStart.disabled = false;
+                alert(data.message || '伺服器端音訊轉檔錯誤');
+            }
+        };
+
+        eventSource.onerror = () => {
+            eventSource.close();
+            aiAudioProgressText.textContent = '連線進度串流失敗';
+            btnAiAudioStart.disabled = false;
+            alert('與伺服器的進度連線發生錯誤。');
+        };
+
+    } catch (err) {
+        aiAudioProgressText.textContent = `錯誤: ${err.message}`;
+        aiAudioProgressBar.style.backgroundColor = 'var(--brand-primary)';
+        btnAiAudioStart.disabled = false;
+        alert(err.message);
+    }
+}
+
 // Load saved inputs on load
 loadSavedFiltersAndSearch();
 lucide.createIcons();
-
-
