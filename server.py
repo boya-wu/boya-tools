@@ -2117,7 +2117,212 @@ def api_transcode_audio_ai_stream():
     return Response(stream_with_context(generate()), mimetype='text/event-stream')
 
 
+def download_twitter_video(url, output_dir=None):
+    import urllib.request
+    import json
+    import re
+    
+    if not output_dir:
+        output_dir = DOWNLOADS_DIR
+    else:
+        os.makedirs(output_dir, exist_ok=True)
+    
+    clean_url = url.split('/video/')[0].split('?')[0]
+    match = re.search(r'/status/(\d+)', clean_url)
+    if not match:
+        raise ValueError(f'無效的 Twitter / X 網址: {url}')
+        
+    status_id = match.group(1)
+    parts = clean_url.split('/status/')[0].split('/')
+    screen_name = parts[-1] if parts else 'twitter'
+    
+    api_url = f"https://api.fxtwitter.com/{screen_name}/status/{status_id}"
+    req = urllib.request.Request(api_url, headers={'User-Agent': 'Mozilla/5.0'})
+    res = json.loads(urllib.request.urlopen(req).read())
+    
+    tweet_data = res.get('tweet', {})
+    text = tweet_data.get('text', '').strip()
+    
+    # 提取推文文字作為標題（取第一行或前 50 個字，清理不合法檔名字元）
+    if text:
+        first_line = text.split('\n')[0].strip()
+        short_title = sanitize_name(first_line)[:50].strip()
+    else:
+        short_title = ""
+        
+    if short_title:
+        out_filename = f"{short_title}_{status_id}.mp4"
+    else:
+        out_filename = f"twitter_{status_id}.mp4"
+        
+    videos = tweet_data.get('media', {}).get('videos', [])
+    if not videos:
+        raise ValueError(f'該推文 ({status_id}) 中未找到可下載的影片')
+        
+    variants = [v for v in videos[0].get('variants', []) if v.get('content_type') == 'video/mp4']
+    if not variants:
+        variants = videos[0].get('variants', [])
+        
+    highest_video = max(variants, key=lambda x: x.get('bitrate', 0))
+    video_url = highest_video['url']
+    
+    out_path = os.path.join(output_dir, out_filename)
+    
+    urllib.request.urlretrieve(video_url, out_path)
+    return out_path, out_filename, os.path.getsize(out_path)
+
+
+def download_twitter_video_stream_helper(url, output_dir, progress_queue):
+    import urllib.request
+    import json
+    import re
+
+    if not output_dir:
+        output_dir = DOWNLOADS_DIR
+    else:
+        os.makedirs(output_dir, exist_ok=True)
+
+    progress_queue.put({'status': 'processing', 'percent': 5, 'message': '正在分析 Twitter / X 推文頁面與獲取媒體資訊...'})
+
+    clean_url = url.split('/video/')[0].split('?')[0]
+    match = re.search(r'/status/(\d+)', clean_url)
+    if not match:
+        raise ValueError(f'無效的 Twitter / X 網址: {url}')
+
+    status_id = match.group(1)
+    parts = clean_url.split('/status/')[0].split('/')
+    screen_name = parts[-1] if parts else 'twitter'
+
+    api_url = f"https://api.fxtwitter.com/{screen_name}/status/{status_id}"
+    req = urllib.request.Request(api_url, headers={'User-Agent': 'Mozilla/5.0'})
+    res = json.loads(urllib.request.urlopen(req).read())
+
+    tweet_data = res.get('tweet', {})
+    text = tweet_data.get('text', '').strip()
+
+    if text:
+        first_line = text.split('\n')[0].strip()
+        short_title = sanitize_name(first_line)[:50].strip()
+    else:
+        short_title = ""
+
+    if short_title:
+        out_filename = f"{short_title}_{status_id}.mp4"
+    else:
+        out_filename = f"twitter_{status_id}.mp4"
+
+    videos = tweet_data.get('media', {}).get('videos', [])
+    if not videos:
+        raise ValueError(f'該推文 ({status_id}) 中未找到可下載的影片')
+
+    variants = [v for v in videos[0].get('variants', []) if v.get('content_type') == 'video/mp4']
+    if not variants:
+        variants = videos[0].get('variants', [])
+
+    highest_video = max(variants, key=lambda x: x.get('bitrate', 0))
+    video_url = highest_video['url']
+    out_path = os.path.join(output_dir, out_filename)
+
+    progress_queue.put({'status': 'processing', 'percent': 10, 'message': f'找到高畫質影片，準備下載: {out_filename}'})
+
+    # 流式下載並即時回報進度
+    video_req = urllib.request.Request(video_url, headers={'User-Agent': 'Mozilla/5.0'})
+    with urllib.request.urlopen(video_req) as response:
+        total_size = int(response.headers.get('Content-Length', 0))
+        downloaded = 0
+        chunk_size = 1024 * 512  # 512KB per chunk
+        
+        with open(out_path, 'wb') as f:
+            while True:
+                chunk = response.read(chunk_size)
+                if not chunk:
+                    break
+                f.write(chunk)
+                downloaded += len(chunk)
+                if total_size > 0:
+                    pct = int(10 + (downloaded / total_size) * 88)
+                    progress_queue.put({
+                        'status': 'processing',
+                        'percent': pct,
+                        'downloaded_mb': round(downloaded / (1024 * 1024), 2),
+                        'total_mb': round(total_size / (1024 * 1024), 2),
+                        'message': f'下載中 ({round(downloaded / (1024 * 1024), 1)} MB / {round(total_size / (1024 * 1024), 1)} MB)'
+                    })
+
+    return out_path, out_filename, os.path.getsize(out_path)
+
+@app.route('/api/download-twitter-stream', methods=['GET'])
+def api_download_twitter_stream():
+    url = request.args.get('url', '').strip()
+    output_dir = request.args.get('output_dir', '').strip()
+
+    if not url:
+        return Response("data: " + json.dumps({'status': 'error', 'message': '請提供 Twitter / X 影片網址'}, ensure_ascii=False) + "\n\n", mimetype='text/event-stream')
+
+    target_dir = output_dir if output_dir else DOWNLOADS_DIR
+
+    def generate():
+        progress_queue = queue.Queue()
+
+        def worker():
+            try:
+                out_path, out_filename, file_size = download_twitter_video_stream_helper(url, target_dir, progress_queue)
+                progress_queue.put({
+                    'status': 'finished',
+                    'percent': 100,
+                    'filename': out_filename,
+                    'path': out_path,
+                    'size': file_size,
+                    'message': '下載完成'
+                })
+            except Exception as e:
+                logger.error(f"Twitter 串流下載失敗: {e}")
+                progress_queue.put({'status': 'error', 'message': str(e)})
+            finally:
+                progress_queue.put(None)
+
+        threading.Thread(target=worker, daemon=True).start()
+
+        while True:
+            msg = progress_queue.get()
+            if msg is None:
+                break
+            yield f"data: {json.dumps(msg, ensure_ascii=False)}\n\n"
+
+    return Response(stream_with_context(generate()), mimetype='text/event-stream')
+
+
+@app.route('/api/download-twitter-video', methods=['GET', 'POST'])
+def api_download_twitter_video():
+
+    if request.method == 'POST':
+        data = request.get_json() or {}
+        url = data.get('url', '').strip()
+        custom_dir = data.get('output_dir', '').strip()
+    else:
+        url = request.args.get('url', '').strip()
+        custom_dir = request.args.get('output_dir', '').strip()
+        
+    if not url:
+        return jsonify({'error': '請提供 Twitter / X 影片網址'}), 400
+        
+    try:
+        target_dir = custom_dir if custom_dir else DOWNLOADS_DIR
+        out_path, out_filename, file_size = download_twitter_video(url, target_dir)
+        return jsonify({
+            'success': True,
+            'filename': out_filename,
+            'path': out_path,
+            'size': file_size
+        })
+    except Exception as e:
+        logger.error(f"Twitter 影片下載失敗: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 if __name__ == '__main__':
+
+
     # Clean downloads on start
     try:
         for f in os.listdir(DOWNLOADS_DIR):

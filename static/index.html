@@ -41,7 +41,7 @@
                     <button id="tab-extract-audio" class="tab-button"><i data-lucide="music"></i> MP4 音訊萃取</button>
                     <button id="tab-compress-video" class="tab-button"><i data-lucide="video"></i> MP4 視訊壓縮</button>
                     <button id="tab-compress-image" class="tab-button"><i data-lucide="image"></i> 圖片批次壓縮</button>
-
+                    <button id="tab-twitter" class="tab-button"><i data-lucide="twitter"></i> Twitter/X 影片下載</button>
                 </div>
             </div>
         </div>
@@ -862,6 +862,88 @@
                                 style="padding: 2px 8px; font-size: 0.75rem;">清除日誌</button>
                         </h3>
                         <div class="console-output" id="compress-image-console-output" style="height: 250px;">
+                            [系統] 等待任務啟動...
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- Twitter/X Video Download Section Wrapper -->
+        <div id="twitter-section-container" style="display: none;">
+            <div class="word2md-grid">
+                <!-- Configuration panel -->
+                <aside class="word2md-config card">
+                    <h2 class="section-title"><i data-lucide="twitter"></i> Twitter/X 影片下載設定</h2>
+                    <div class="form-group" style="margin-bottom: 1.25rem;">
+                        <label for="twitter-folder-path">儲存資料夾路徑 (選填，自動記憶)</label>
+                        <input type="text" id="twitter-folder-path" class="form-control"
+                            placeholder="預設為 downloads 資料夾，例如: D:\Videos\Twitter">
+                        <small style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.25rem;">
+                            請輸入儲存影片的本機絕對路徑。留空則自動下載儲存至本工具的 <code>downloads</code> 資料夾。
+                        </small>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 1.25rem;">
+                        <label for="twitter-urls">Twitter / X 影片網址 (支援單一或批次，每行一個)</label>
+                        <textarea id="twitter-urls" class="form-control" rows="8"
+                            placeholder="請貼上 Twitter / X 推文網址，支援每行一個網址...&#10;例如：&#10;https://x.com/hot_mom90/status/2083885535676842158&#10;https://x.com/username/status/1234567890/video/1"></textarea>
+                    </div>
+
+                    <div class="form-actions"
+                        style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                        <button id="btn-twitter-start" class="btn btn-primary btn-block"><i data-lucide="download"></i>
+                            開始批次下載影片</button>
+                        <button id="btn-twitter-stop" class="btn btn-danger btn-block" disabled><i
+                                data-lucide="square"></i> 停止下載</button>
+                    </div>
+                </aside>
+
+                <!-- Monitoring Dashboard -->
+                <section class="word2md-monitor">
+                    <div class="results-header card">
+                        <div class="results-stat">
+                            任務進度：<span id="twitter-stat-progress">未開始</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div id="twitter-overall-progress"
+                                style="width: 150px; height: 8px; background-color: #e2e8f0; border-radius: 4px; overflow: hidden; position: relative;">
+                                <div id="twitter-overall-progress-bar"
+                                    style="width: 0%; height: 100%; background-color: var(--brand-secondary); transition: var(--transition-smooth);">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Statistics Card -->
+                    <div class="word2md-stats-row"
+                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; margin-top: 1rem; margin-bottom: 1rem;">
+                        <div class="card" style="padding: 1rem; text-align: center;">
+                            <div style="font-size: 0.85rem; color: var(--text-secondary);">總網址數</div>
+                            <div id="twitter-stat-total"
+                                style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">0</div>
+                        </div>
+                        <div class="card" style="padding: 1rem; text-align: center;">
+                            <div style="font-size: 0.85rem; color: var(--text-secondary);">成功下載數</div>
+                            <div id="twitter-stat-success"
+                                style="font-size: 1.5rem; font-weight: 700; color: var(--status-success);">0</div>
+                        </div>
+                        <div class="card" style="padding: 1rem; text-align: center;">
+                            <div style="font-size: 0.85rem; color: var(--text-secondary);">失敗數</div>
+                            <div id="twitter-stat-failed"
+                                style="font-size: 1.5rem; font-weight: 700; color: var(--brand-primary);">0</div>
+                        </div>
+                    </div>
+
+                    <!-- Log console -->
+                    <div class="card batch-console">
+                        <h3 class="section-title"
+                            style="font-size: 0.95rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+                            <span><i data-lucide="terminal"></i> 執行日誌</span>
+                            <button id="btn-twitter-clear-console" class="btn btn-secondary btn-sm"
+                                style="padding: 2px 8px; font-size: 0.75rem;">清除日誌</button>
+                        </h3>
+                        <div class="console-output" id="twitter-console-output" style="height: 250px;">
                             [系統] 等待任務啟動...
                         </div>
                     </div>

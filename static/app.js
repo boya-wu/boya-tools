@@ -1013,6 +1013,21 @@ const compressImageStatFailed = document.getElementById('compress-image-stat-fai
 const compressImageConsoleOutput = document.getElementById('compress-image-console-output');
 const btnCompressImageClearConsole = document.getElementById('btn-compress-image-clear-console');
 
+// Twitter/X Download DOM Elements
+const tabTwitter = document.getElementById('tab-twitter');
+const twitterSectionContainer = document.getElementById('twitter-section-container');
+const twitterFolderPathInput = document.getElementById('twitter-folder-path');
+const twitterUrlsInput = document.getElementById('twitter-urls');
+const btnTwitterStart = document.getElementById('btn-twitter-start');
+const btnTwitterStop = document.getElementById('btn-twitter-stop');
+const twitterStatProgress = document.getElementById('twitter-stat-progress');
+const twitterOverallProgressBar = document.getElementById('twitter-overall-progress-bar');
+const twitterStatTotal = document.getElementById('twitter-stat-total');
+const twitterStatSuccess = document.getElementById('twitter-stat-success');
+const twitterStatFailed = document.getElementById('twitter-stat-failed');
+const twitterConsoleOutput = document.getElementById('twitter-console-output');
+const btnTwitterClearConsole = document.getElementById('btn-twitter-clear-console');
+
 // Tab Switching Helper
 function setTabActive(tabName) {
     tabYoutube.classList.remove('active');
@@ -1023,6 +1038,7 @@ function setTabActive(tabName) {
     tabExtractAudio.classList.remove('active');
     tabCompressVideo.classList.remove('active');
     tabCompressImage.classList.remove('active');
+    if (tabTwitter) tabTwitter.classList.remove('active');
     
     youtubeSectionContainer.style.display = 'none';
     pdfSectionContainer.style.display = 'none';
@@ -1032,6 +1048,7 @@ function setTabActive(tabName) {
     extractAudioSectionContainer.style.display = 'none';
     compressVideoSectionContainer.style.display = 'none';
     compressImageSectionContainer.style.display = 'none';
+    if (twitterSectionContainer) twitterSectionContainer.style.display = 'none';
     
     if (tabName === 'youtube') {
         tabYoutube.classList.add('active');
@@ -1057,6 +1074,9 @@ function setTabActive(tabName) {
     } else if (tabName === 'compress-image') {
         tabCompressImage.classList.add('active');
         compressImageSectionContainer.style.display = 'block';
+    } else if (tabName === 'twitter') {
+        if (tabTwitter) tabTwitter.classList.add('active');
+        if (twitterSectionContainer) twitterSectionContainer.style.display = 'block';
     }
     localStorage.setItem('active-tab', tabName);
 }
@@ -1070,6 +1090,8 @@ if (tabTranscodeAiAudio) tabTranscodeAiAudio.addEventListener('click', () => set
 tabExtractAudio.addEventListener('click', () => setTabActive('extract-audio'));
 tabCompressVideo.addEventListener('click', () => setTabActive('compress-video'));
 tabCompressImage.addEventListener('click', () => setTabActive('compress-image'));
+if (tabTwitter) tabTwitter.addEventListener('click', () => setTabActive('twitter'));
+
 
 
 // Bind PDF Event Listeners
@@ -2825,3 +2847,196 @@ async function startAiAudioTranscoding() {
 // Load saved inputs on load
 loadSavedFiltersAndSearch();
 lucide.createIcons();
+
+// ==========================================
+// Twitter/X Video Batch Download Module
+// ==========================================
+
+let isTwitterRunning = false;
+let shouldStopTwitter = false;
+
+function logToTwitterConsole(text) {
+    if (!twitterConsoleOutput) return;
+    const timeStr = new Date().toLocaleTimeString();
+    twitterConsoleOutput.innerHTML += `[${timeStr}] ${text}\n`;
+    twitterConsoleOutput.scrollTop = twitterConsoleOutput.scrollHeight;
+}
+
+if (twitterFolderPathInput) {
+    if (localStorage.getItem('twitter-folder-path')) {
+        twitterFolderPathInput.value = localStorage.getItem('twitter-folder-path');
+    }
+    twitterFolderPathInput.addEventListener('input', () => {
+        localStorage.setItem('twitter-folder-path', twitterFolderPathInput.value);
+    });
+}
+if (twitterUrlsInput) {
+    if (localStorage.getItem('twitter-urls')) {
+        twitterUrlsInput.value = localStorage.getItem('twitter-urls');
+    }
+    twitterUrlsInput.addEventListener('input', () => {
+        localStorage.setItem('twitter-urls', twitterUrlsInput.value);
+    });
+}
+
+if (btnTwitterClearConsole) {
+    btnTwitterClearConsole.addEventListener('click', () => {
+        if (twitterConsoleOutput) twitterConsoleOutput.innerHTML = '[系統] 日誌已清除。\n';
+    });
+}
+if (btnTwitterStart) {
+    btnTwitterStart.addEventListener('click', startTwitterBatchDownload);
+}
+if (btnTwitterStop) {
+    btnTwitterStop.addEventListener('click', () => {
+        shouldStopTwitter = true;
+        logToTwitterConsole('[系統] ⚠️ 正在停止 Twitter 影片下載...');
+        btnTwitterStop.disabled = true;
+    });
+}
+
+function downloadTwitterStreamHelper(url, outputDir, onProgress) {
+    return new Promise((resolve) => {
+        const queryParams = new URLSearchParams({
+            url: url,
+            output_dir: outputDir || ''
+        }).toString();
+
+        const eventSource = new EventSource(`/api/download-twitter-stream?${queryParams}`);
+
+        eventSource.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.status === 'processing') {
+                    if (onProgress) onProgress(data.percent || 0, data.message || '');
+                } else if (data.status === 'finished') {
+                    eventSource.close();
+                    resolve({
+                        success: true,
+                        filename: data.filename,
+                        path: data.path,
+                        size: data.size
+                    });
+                } else if (data.status === 'error') {
+                    eventSource.close();
+                    resolve({
+                        success: false,
+                        error: data.message || '下載失敗'
+                    });
+                }
+            } catch (e) {
+                console.error('Error parsing SSE Twitter data:', e);
+            }
+        };
+
+        eventSource.onerror = (e) => {
+            eventSource.close();
+            resolve({
+                success: false,
+                error: '與伺服器的連線中斷'
+            });
+        };
+
+    });
+}
+
+async function startTwitterBatchDownload() {
+    if (isTwitterRunning) return;
+
+    const urls = twitterUrlsInput.value
+        .split('\n')
+        .map(u => u.trim())
+        .filter(u => u.length > 0);
+
+    if (urls.length === 0) {
+        alert('請先輸入至少一個 Twitter / X 推文網址！');
+        return;
+    }
+
+    const outputDir = twitterFolderPathInput.value.trim();
+
+    isTwitterRunning = true;
+    shouldStopTwitter = false;
+    btnTwitterStart.disabled = true;
+    btnTwitterStop.disabled = false;
+    twitterUrlsInput.disabled = true;
+    twitterFolderPathInput.disabled = true;
+
+    twitterStatProgress.textContent = `下載中 (0 / ${urls.length})`;
+    twitterOverallProgressBar.style.width = '0%';
+    twitterStatTotal.textContent = urls.length;
+    twitterStatSuccess.textContent = '0';
+    twitterStatFailed.textContent = '0';
+    twitterConsoleOutput.innerHTML = `[系統] 啟動 Twitter / X 影片下載任務 (共 ${urls.length} 個網址)...\n`;
+    if (outputDir) {
+        logToTwitterConsole(`[系統] 儲存目標目錄: ${outputDir}`);
+    } else {
+        logToTwitterConsole(`[系統] 儲存目標目錄: 預設 downloads 資料夾`);
+    }
+
+    let successCount = 0;
+    let failedCount = 0;
+
+    for (let i = 0; i < urls.length; i++) {
+        if (shouldStopTwitter) break;
+        const url = urls[i];
+        
+        // 記錄該影片下載起點
+        logToTwitterConsole(`[${i + 1}/${urls.length}] 正在分析並下載: ${url}`);
+        
+        // 在日誌追加一行專屬的進度列，之後只更新該列的文字內容
+        const progressLineEl = document.createElement('div');
+        progressLineEl.style.color = 'var(--text-muted)';
+        progressLineEl.style.fontSize = '0.85rem';
+        progressLineEl.style.paddingLeft = '1rem';
+        progressLineEl.textContent = '    └─ 正在獲取媒體資訊...';
+        twitterConsoleOutput.appendChild(progressLineEl);
+        twitterConsoleOutput.scrollTop = twitterConsoleOutput.scrollHeight;
+
+        const res = await downloadTwitterStreamHelper(url, outputDir, (percent, msg) => {
+            const overallPct = Math.round(((i + (percent / 100)) / urls.length) * 100);
+            twitterOverallProgressBar.style.width = `${overallPct}%`;
+            twitterStatProgress.textContent = `下載中 (${i + 1} / ${urls.length}) - ${percent}%`;
+            
+            if (msg) {
+                progressLineEl.textContent = `    └─ ${msg}`;
+                twitterConsoleOutput.scrollTop = twitterConsoleOutput.scrollHeight;
+            }
+        });
+
+        if (res.success) {
+            successCount++;
+            twitterStatSuccess.textContent = successCount;
+            progressLineEl.style.color = 'var(--status-success)';
+            progressLineEl.textContent = `    └─ ✅ 下載成功: ${res.filename} (${(res.size / (1024 * 1024)).toFixed(2)} MB)`;
+            logToTwitterConsole(`       儲存位置: ${res.path}`);
+        } else {
+            failedCount++;
+            twitterStatFailed.textContent = failedCount;
+            progressLineEl.style.color = 'var(--brand-primary)';
+            progressLineEl.textContent = `    └─ ❌ 下載失敗: ${res.error}`;
+        }
+
+        const currentDonePct = Math.round(((i + 1) / urls.length) * 100);
+        twitterOverallProgressBar.style.width = `${currentDonePct}%`;
+    }
+
+
+    isTwitterRunning = false;
+    btnTwitterStart.disabled = false;
+    btnTwitterStop.disabled = true;
+    twitterUrlsInput.disabled = false;
+    twitterFolderPathInput.disabled = false;
+
+    if (shouldStopTwitter) {
+        twitterStatProgress.textContent = '已手動停止';
+        logToTwitterConsole('[系統] ⏹️ 任務已手動停止。');
+    } else {
+        twitterStatProgress.textContent = '下載結束';
+        twitterOverallProgressBar.style.width = '100%';
+        logToTwitterConsole(`[系統] 🎉 下載結束！成功: ${successCount}，失敗: ${failedCount}`);
+        alert(`Twitter 影片下載結束！\n總網址數：${urls.length}\n成功：${successCount}\n失敗：${failedCount}`);
+    }
+}
+
+
